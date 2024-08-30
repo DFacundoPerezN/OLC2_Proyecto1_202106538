@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oakland</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="sidebar">
+        <button id="open-file">Abrir archivo</button>
+        <button id="execute">Ejecutar</button>
+        <button id="reports">Reportes</button>
+    </div>
+    <div class="main-content">
+        <div class="text-area">
+            <label for="code">Código:</label>
+            <div class="code-area">
+                <div class="line-numbers" id="line-numbers">1</div>
+                <textarea id="code" class="code" placeholder="Escribe tu código aquí..."></textarea>
+            </div>
+        </div>
+        <div class="text-area">
+            <label for="console">Consola:</label>
+            <textarea id="console" class="console" readonly placeholder="Resultados de la consola..."></textarea>
+        </div>
+    </div>
+
+    <script>
+        const codeArea = document.getElementById('code');
+        const lineNumbers = document.getElementById('line-numbers');
+
+        codeArea.addEventListener('input', updateLineNumbers);
+        codeArea.addEventListener('scroll', () => {
+            lineNumbers.scrollTop = codeArea.scrollTop;
+        });
+
+        function updateLineNumbers() {
+            const lines = codeArea.value.split('\n').length;
+            lineNumbers.innerHTML = Array(lines)
+                .fill(0)
+                .map((_, i) => i + 1)
+                .join('<br>');
+        }
+
+        updateLineNumbers();
+    </script>
+</body>
+<script type="module" src="main.js"></script>
+<script src="https://unpkg.com/peggy"></script>
+<script src="https://cdn.jsdelivr.net/npm/peggy"></script>
+</html>
