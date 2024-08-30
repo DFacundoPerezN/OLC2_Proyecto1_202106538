@@ -38,7 +38,12 @@
 
 }
 
-start = instruc _
+start = sentences
+
+sentences = sentence:sentence sentences:sentences { return [sentence].concat(sentences); }
+	/sentence
+
+sentence = instruc _
 
 // Instruccions
 instruc = dec / assing
@@ -48,7 +53,7 @@ dec = type:type id:id "=" exp:exp ";"	{ return createNode("declaration", [type, 
 	/type:type id ";"					{ return createNode("declaration", [id, exp]); }
     /_ "var" _ id:id "=" exp:exp ";"	{ return createNode("declaration", ["var", id, exp]); }
 // Assign
-assing = _ id:id "=" exp:exp _ ";" { return createNode("assign", [id, exp]); }
+assing = _ id:id "=" exp:exp _ ";" 	{ return createNode("assign", [id, exp]); }
 
 // valor
 exp = logical
@@ -104,6 +109,19 @@ term =  decimal:float 	{return createNode(decimal, null);} //{ return parseFloat
     / "(" num:exp ")"_ 	{return num}
 
 type = _ type:("int"/"float"/"char"/"boolean"/"string") _ {return type;}
+
+nativeFunction = _ "parseInt(" _ str:string _ ")" _ ";" {return createNode("parseInt", str);}
+				/ _ "parseFloat(" _ str:string _ ")" _ ";" {return createNode("parseFloat", str);}
+				/ _ "toString(" _ exp:exp _ ")" _ ";" {return createNode("toString", exp);}
+				/  _ "toLowerCase(" _ exp:exp _ ")" _ ";" {return createNode("toLowerCase", exp);}
+				/ _ "toUpperCase(" _ exp:exp _ ")" _ ";" {return createNode("toUpperCase", exp);}
+				/ _ "typeof" _ exp:exp _ ";" {return createNode("typeof", exp);}
+	  
+print = _ "System.out.println(" (elements:listcons) ")" _ ";" {return createNode("print", elements);}
+
+listcons = listelement:exp "," listcons:listcons {return [listelement].concat(listcons);}
+	/ listelement:exp 
+
 
 _ "Whitespace" = [ \t\n\r]*
 entero = _ int:[0-9]+ _ {return text()}
