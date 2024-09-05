@@ -1,3 +1,19 @@
+class NodeBase {
+  constructor(type){
+    this.type = type;
+    this.value = null;
+    this.children = [];
+  }
+}
+
+class NodeID extends NodeBase {
+  constructor(type){
+    super(type);
+    this.line = 0;
+    this.column = 0;
+  }
+}
+
 class Experession {
     constructor(){
         this.line = null;
@@ -23,6 +39,12 @@ class aritmeticOperation extends Experession {
     }
 }
 
+/**
+ * Represents a relational operation.
+ * @class
+ * @extends Experession
+ * @memberof module:structs/nodes
+ */
 class relationalOperation extends Experession {
     constructor({left, right, operator}) {
       super();
@@ -49,9 +71,11 @@ class Number extends Experession{
 
 
 export default {
-    BoolOperation,
-    aritmeticOperation,
-    relationalOperation,
-    negativeOperation,
-    Number
+  NodeBase,
+  NodeID,
+  BoolOperation,
+  aritmeticOperation,
+  relationalOperation,
+  negativeOperation,
+  Number
 }
