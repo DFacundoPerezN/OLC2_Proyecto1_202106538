@@ -49,20 +49,21 @@ start = sentences
 
 sentences = sentence:sentence sentences:sentences { return [sentence].concat(sentences); }
 	/sentence _
+    /_ {return []}
 
-sentence = coments {return []}
-			/instruc 
+sentence = instruc 
 			/sentenceIf
 			/sentenceWhile 
             / sentenceSwitch 
             / sentenceFor 
             / sentenceT
-            / print
+			/ print
+            / coments {return []}
  
 //Transfer sentences
 sentenceT = _"continue"_";"				{return createNodeVar("continue", "continue");}
 			/_"break"_";"				{return createNodeVar("break", "break");}
-			/_"return"_";"				{return createNode("return", "return");}
+			/_"return"_";"				{return createNodeVar("return", "return");}
             /_"return"_ exp:exp _";"	{const node = createNode("return", [exp]); node.value = "return" ;return node;}
 
 //Sentences Block
@@ -88,27 +89,31 @@ sentenceWhile = _ "while" _"("_ cond:exp _")"_ sens:sentenceBlock {return create
 //Sentence Switch case
 sentenceSwitch = _ "switch" _ "("_ exp:exp _")" _ "{" sC:sentenceCase "}" 
 					{return createNode("switch",[exp, sC]);}
-sentenceCase = _ "default:" _ sens:sentences
+sentenceCase = _ "default:" _ sens:sentences 
+					{return createNode("default",[sens]);}
             / _ "case" _ exp:exp _ ":" _ sens:sentences sC:sentenceCase
+					{return createNode("case",[exp, sens].concat(sC));}
 			/_ "case" _ exp:exp _ ":" sens:sentences
+					{return createNode("case",[exp, sens]);}
 
 //Sentence For
-sentenceFor = _"for"_"("_ type _ element:id _":"_ array:id ")"_ sens:sentenceBlock
-			/ _"for"_"("_ dec:(dec/assing)_ ";" _ cond:and _";"_ inc:inc _")"_ sens:sentenceBlock
+sentenceFor = _"for"_"("_ type:type _ element:id _":"_ array:id ")"_ sens:sentenceBlock 
+			{return createNode("for_Array", [type, element, array, sens]);}
+			/ _"for"_"("_ dec:(dec/assing)_ ";" _ cond:and _";"_ inc:(inc/assing) _")"_ sens:sentenceBlock
 
 //Incre
-inc "Incremental" =  id:id _ "++" 			 {return createNode("++", id);}
-	/ id:id _ "--"		 {return createNode("--", id);}
-    /  id:id _ "+="_ exp:exp 	 {return createNode("+=", [id, exp]);} // id.getValue() + exp.getValue()
-    /  id:id _ "-="_ exp:exp 	 {return createNode("-=", [id, exp]);}
+inc "Incremental" =  id:id _ "++" 	{return createNode("++", id);}
+	/ id:id _ "--"		 			{return createNode("--", id);}
+    /  id:id _ "+="_ exp:exp 	 	{return createNode("+=", [id, exp]);} // id.getValue() + exp.getValue()
+    /  id:id _ "-="_ exp:exp 		{return createNode("-=", [id, exp]);}
     
 // Instruccions
 instruc = (arrayDecl/ dec _ ";"/ assing _ ";"/ inc _ ";")
 
 //Declaration 
-dec = type:type id:id 					{ return createNode("declaration", [id]); }
-    /type:type id:id "=" exp:exp 	{ return createNode("declaration", [type, id, exp]); }
-	/_ "var" _ id:id "=" exp:exp 	{ return createNode("declaration", ["var", id, exp]); }
+dec = type:type id:id "=" exp:exp 	{ return createNode("declaration", [type, id, exp]); }
+    /type:type id:id 					{ return createNode("declaration", [type, id]); }
+	/ _ "var" _ id:id "=" exp:exp 	{ return createNode("declaration", ["var", id, exp]); }
     
 // Assign
 assing = _ id:id "=" exp:exp { return createNode("assign", [id, exp]); }
@@ -165,7 +170,7 @@ term =  decimal:float 	{return createNodeVar("float", decimal);} //{ return pars
 	/ b:boolean 		{return createNodeVar("boolean", b);} //{ return b; }
     / s:string 			{return createNodeVar("string", s);} //{ return s; }
     / c:char			{return createNodeVar("char", c);} //{ return c; }
-	/ val:id 			{return createNodeID(location()?.start.line, location()?.start.column, val);}
+	/ val:id 			
     / "(" num:exp ")"_ 	{return num}
     / val:id ("["_ num:exp _"]")+ {return createNodeVar("Array", text());}
 
@@ -196,17 +201,17 @@ arrayExp = "new" _ type _ ("["_ entero _"]")+
 	/ "{" _ list:listcons _ "}"  
     
 _ "Whitespace" = [ \t\n\r]*
-entero = _ int:[0-9]+ _ {return text()}
-float "Float" = _ [0-9]+("."[0-9]+)? _ {return text()}
-boolean =  _ bool:("true"/ "false")_ {return bool}
-string "String" = _"\"" ([^"]/escapes)*"\""_ {return text()}
-char "char" = _  "'"[^']"'"_ {return text()}
-id "ID" = !reserved [A-Za-z][A-Za-z0-9]* _ {return text()}
+entero = _ int:[0-9]+ _ 						{return text()}
+float "Float" = _ [0-9]+("."[0-9]+)? _ 			{return text()}
+boolean =  _ bool:("true"/ "false")_ 			{return bool}
+string "String" = _"\"" ([^"]/escapes)*"\""_ 	{return text()}
+char "char" = _  "'"[^']"'"_ 					{return text()}
+id "ID" = val:(!reserved [A-Za-z][A-Za-z0-9]*) _ 		{return createNodeID(location()?.start.line, location()?.start.column, text());}
 
 reserved = type / "if" / "else" /"switch" / "case" /"for"
 
-coments"Comments" = _"//" ([^(\n)])* "\n"
-			/ _ "/*" [^(*/)]* "*/" {}
+coments"Comments" = _ "/*" (!"*/" .)* "*/"
+			/ _"//" ([^(\n)])* "\n"
 
 escapes =_ "\\" ("n" / "t" / '"' / "\\") _ ;
 
