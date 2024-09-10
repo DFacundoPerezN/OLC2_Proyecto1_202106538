@@ -51,19 +51,20 @@ sentences = sentence:sentence sentences:sentences { return [sentence].concat(sen
 	/sentence _
     /_ {return []}
 
-sentence = instruc 
+sentence =  instruc
 			/sentenceIf
 			/sentenceWhile 
             / sentenceSwitch 
             / sentenceFor 
-            / sentenceT
+			/sentenceT
 			/ print
-            / coments {return []}
+            /coments {return []}
  
 //Transfer sentences
 sentenceT = _"continue"_";"				{return createNodeVar("continue", "continue");}
 			/_"break"_";"				{return createNodeVar("break", "break");}
-			/_"return"_";"				{return createNodeVar("return", "return");}
+            
+return = _"return"_";"				{return createNodeVar("return", "return");}
             /_"return"_ exp:exp _";"	{const node = createNode("return", [exp]); node.value = "return" ;return node;}
 
 //Sentences Block
@@ -71,15 +72,15 @@ sentenceBlock = "{" sens:sentences "}" {return createNode("sentences", sens);}
 
 //Sentence If-Else
 sentenceIf =  _ "if" _"("_ cond:exp _")"_ sentences:sentenceBlock senIfE:sentenceIfElse 
-					{return createNode("if",[sentences].concat(senIfE));}
+					{return createNode("if",[cond, sentences].concat(senIfE));}
             /_ "if" _"("_ cond:exp _")"_ sens:sentenceBlock 
 					{return createNode("if",[cond, sens]);}
              
 sentenceIfElse = sentenceElse
 				/ _ "else"_ "if" _"("_ cond:exp _")"_ sentences:sentenceBlock senIfE:sentenceIfElse
-					{return createNode("else if",[cond, [sentences].concat(senIfE)]);}
+					{return [createNode("else if",[cond,sentences])].concat(senIfE)  ;}
 				/ _ "else"_ "if" _"("_ cond:exp _")"_ sentences:sentenceBlock		
-					{return createNode("else if",[cond, sentences]);}
+					{return createNode("else if",[cond].concat(sentences));}
                     
 sentenceElse = _ "else" _ sentences:sentenceBlock {return createNode("else", [sentences]);}
 
@@ -88,38 +89,41 @@ sentenceWhile = _ "while" _"("_ cond:exp _")"_ sens:sentenceBlock {return create
 
 //Sentence Switch case
 sentenceSwitch = _ "switch" _ "("_ exp:exp _")" _ "{" sC:sentenceCase "}" 
-					{return createNode("switch",[exp, sC]);}
-sentenceCase = _ "default:" _ sens:sentences 
-					{return createNode("default",[sens]);}
-            / _ "case" _ exp:exp _ ":" _ sens:sentences sC:sentenceCase
-					{return createNode("case",[exp, sens].concat(sC));}
-			/_ "case" _ exp:exp _ ":" sens:sentences
+					{return createNode("switch",[exp].concat(sC));}
+                    
+sentenceCase = _ "case" _ exp:exp _ ":" _ sens:sentences sC:sentenceCase
+					{return [createNode("case",[exp,sens])].concat(sC);}
+            / _ "case" _ exp:exp _ ":" sens:sentences
 					{return createNode("case",[exp, sens]);}
+			/_ "default:" _ sens:sentences 
+					{return createNode("default",sens);}
 
 //Sentence For
 sentenceFor = _"for"_"("_ type:type _ element:id _":"_ array:id ")"_ sens:sentenceBlock 
 			{return createNode("for_Array", [type, element, array, sens]);}
 			/ _"for"_"("_ dec:(dec/assing)_ ";" _ cond:and _";"_ inc:(inc/assing) _")"_ sens:sentenceBlock
+            {return createNode("for", [dec, cond, inc, sens]);}
+
+// Instruccions
+instruc = ( arrayDecl /  inc _ ";"/ dec _ ";" / assing _ ";")
 
 //Incre
-inc "Incremental" =  id:id _ "++" 	{return createNode("++", id);}
-	/ id:id _ "--"		 			{return createNode("--", id);}
-    /  id:id _ "+="_ exp:exp 	 	{return createNode("+=", [id, exp]);} // id.getValue() + exp.getValue()
-    /  id:id _ "-="_ exp:exp 		{return createNode("-=", [id, exp]);}
+inc "Incremental" = _ id:id _ inc:("+="/"-=")_ exp:exp
+						{return createNode(inc , [id, exp]);} // id.getValue() + exp.getValue()
+            		/ _ id:id _ inc:("++"/"--") 	
+            			{return createNode(inc, id);}
     
-// Instruccions
-instruc = (arrayDecl/ dec _ ";"/ assing _ ";"/ inc _ ";")
-
 //Declaration 
 dec = type:type id:id "=" exp:exp 	{ return createNode("declaration", [type, id, exp]); }
     /type:type id:id 					{ return createNode("declaration", [type, id]); }
 	/ _ "var" _ id:id "=" exp:exp 	{ return createNode("declaration", ["var", id, exp]); }
+    /inc
     
-// Assign
-assing = _ id:id "=" exp:exp { return createNode("assign", [id, exp]); }
+// Assignment
+assing = _ id:id _ "=" exp:exp { return createNode("assign", [id, exp]); }
 
 // valor
-exp = logical / op3
+exp = op3/ logical 
 //Logical 
 logical = and
 
@@ -184,7 +188,7 @@ nativeFunction = _ "parseInt(" _ str:exp _ ")"  	{return createNode("parseInt", 
 				/ _ "typeof" _ exp:exp _ 			{return createNode("typeof",[exp]);}
     
 //Operador 3
-op3 = _ cond:and _ "?" _ expT:exp _ ":" _ expF:exp _ ";" {return createNode("op3", [cond, expT, expF]);} // if(cond.getvalue()) {op3.value=expF} else{op3.value=expF}
+op3 = _ cond:and _ "?" _ expT:exp _ ":" _ expF:exp  {return createNode("op3", [cond, expT, expF]);} // if(cond.getvalue()) {op3.value=expF} else{op3.value=expF}
 
 //Sentence Print
 print = _ "System.out.println(" list:listcons ")" _ ";" {return createNode("print", [list]);}
@@ -200,13 +204,19 @@ arrayExp = "new" _ type _ ("["_ entero _"]")+
 	/ id
 	/ "{" _ list:listcons _ "}"  
     
+//Void
+void = _ "void" _ id:id _ "("_")" sens:sentencesVoid {return createNode("void", sens.concat(re));}
+
+sentencesVoid = _"{"_ sens:sentences re:return (sentences)? "}"_{return createNode("sentences", sens.concat(re));}
+				/sentenceBlock 
+
 _ "Whitespace" = [ \t\n\r]*
 entero = _ int:[0-9]+ _ 						{return text()}
-float "Float" = _ [0-9]+("."[0-9]+)? _ 			{return text()}
+float "Float" = _ [0-9]+"."([0-9]+)? _ 			{return text()}
 boolean =  _ bool:("true"/ "false")_ 			{return bool}
-string "String" = _"\"" ([^"]/escapes)*"\""_ 	{return text()}
+string "String" = _"\"" a:([^"]/escapes)*"\""_ 	{return text()}
 char "char" = _  "'"[^']"'"_ 					{return text()}
-id "ID" = val:(!reserved [A-Za-z][A-Za-z0-9]*) _ 		{return createNodeID(location()?.start.line, location()?.start.column, text());}
+id "ID" = val:(!reserved [A-Za-z]["_"A-Za-z0-9]*) _ 		{return createNodeID(location()?.start.line, location()?.start.column, text());}
 
 reserved = type / "if" / "else" /"switch" / "case" /"for"
 

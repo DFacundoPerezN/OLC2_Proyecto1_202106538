@@ -78,6 +78,13 @@ getValue = (node, symbols) => {
         getValue(node.children[0], symbols)
         node.value = node.children[0].type;
         return node.value;
+    } else if(node.type==='op3'){            
+        let condition = getValue(node.children[0], symbols);        
+        if (condition == 'true') {
+            return getValue(node.children[1], symbols);
+        } else {
+            return getValue(node.children[2], symbols);
+        }
     }
     else { 
         let right = "null";
@@ -188,7 +195,7 @@ getValue = (node, symbols) => {
         case '>':
             node.type = 'boolean';
             if (node.children[0].type === 'char' && node.children[1].type === 'char') {//If one of the operands is a string, we concatenate them
-                return left > right;
+                return (left > right).toString();
             }
             else if (node.children[0].type === 'int' && node.children[1].type === 'int') {//If both operands are integers, we parse them to int and add them
                 const value = parseInt(left) > parseInt(right);
@@ -201,7 +208,7 @@ getValue = (node, symbols) => {
                 return value.toString();
             }
             console.log('Semantic Error: Invalid operands for '+ left +' > ' + right);
-            return left > right;
+            return (left > right).toString();
         case '<':
             node.type = 'boolean';
             if (node.children[0].type === 'char' || node.children[1].type === 'char') {//If one of the operands is a string, we concatenate them
@@ -218,11 +225,11 @@ getValue = (node, symbols) => {
                 return value.toString();
             }
             console.log('Semantic Error: Invalid operands for '+ left +' < ' + right);
-            return left < right;
+            return (left < right).toString();
         case '>=':
             node.type = 'boolean';
             if (node.children[0].type === 'char' || node.children[1].type === 'char') {//If one of the operands is a string, we concatenate them
-                return left >= right;
+                return (left >= right).toString();
             }
             else if (node.children[0].type === 'int' && node.children[1].type === 'int') {//If both operands are integers, we parse them to int and add them
                 const value = parseInt(left) >= parseInt(right);
@@ -235,7 +242,7 @@ getValue = (node, symbols) => {
                 return value.toString();
             }
             console.log('Semantic Error: Invalid operands for'+ left +' >= ' + right);
-            return left > right;
+            return (left >= right).toString();
         case '<=':
             node.type = 'boolean';
             if (node.children[0].type === 'char' || node.children[1].type === 'char') {//If one of the operands is a string, we concatenate them
@@ -252,28 +259,28 @@ getValue = (node, symbols) => {
                 return value.toString();
             }
             console.log('Semantic Error: Invalid operands for'+ left +' <= ' + right);
-            return left <= right;
+            return (left <= right).toString();
         case '&&':            
             node.type = 'boolean';
             if (node.children[0].type === 'boolean' && node.children[1].type === 'boolean') {
-                return left && right;
+                return (left && right).toString();
             }
             console.log('Semantic Error: Invalid operands for'+ left +' && ' + right);
-            return left && right;
+            return (left && right).toString();
         case '||':
             node.type = 'boolean';
             if (node.children[0].type === 'boolean' && node.children[1].type === 'boolean') {
-                return left || right;
+                return (left || right).toString();
             }
             console.log('Semantic Error: Invalid operands for'+ left +' || ' + right);
-            return left || right;
+            return (left || right).toString();
         case '!':
             node.type = 'boolean';
             if (node.children[0].type === 'boolean') {
-                return !right;
+                return (!right).toString();
             }
-            console.log('Semantic Error: Invalid operands for !' + right);
-            return !right;
+            console.log('Semantic Error: Invalid operand for ! ' + right);
+            return (!right).toString();;
         
         }
     }
@@ -282,29 +289,35 @@ getValue = (node, symbols) => {
 executeSentences = (node, symbols) => { 
     for(let i = 0; i < node.children.length; i++) {
         if (node.children[i] !== null) {
-            if (node.children[i].type === 'declaration') {
-                executeDeclaration(node.children[i], symbols);
-            } else if (node.children[i].type === 'assign') {
-                executeAssignment(node.children[i], symbols);
-            } else if (node.children[i].type === 'print') {
-                executePrint(node.children[i], symbols);
-            } else if (node.children[i].type === 'if') {
-                executeIf(node.children[i], symbols);
-            } else if (node.children[i].type === 'while') {
-                executeWhile(node.children[i], symbols);
-            } else if (node.children[i].type === 'for') {
-                executeFor(node.children[i], symbols);
-            } else if (node.children[i].type === 'switch') {
-                executeSwitch(node.children[i], symbols);
-            } else if (node.children[i].type === 'break') {
-                executeBreak(node.children[i], symbols);
-            } else if (node.children[i].type === 'continue') {
-                executeContinue(node.children[i], symbols);
-            } else if (node.children[i].type === 'return') {
-                executeReturn(node.children[i], symbols);
-            }
+            executeSentence(node.children[i], symbols);
         }
     }
 }
 
-export { Synthesis, getValue, executeSentences };
+executeSentence = (node, symbols) => {
+    if (node.type === 'declaration') {
+        executeDeclaration(node, symbols);
+    } else if (node.type === 'assign') {
+        executeAssignment(node, symbols);
+    } else if (node.type === 'print') {
+        executePrint(node, symbols);
+    } else if (node.type === 'if') {
+        executeIf(node, symbols);
+    } else if (node.type === 'while') {
+        executeWhile(node, symbols);
+    } else if (node.type === 'for') {
+        executeFor(node, symbols);
+    } else if (node.type === 'switch') {
+        executeSwitch(node, symbols);
+    // } else if (node.type === 'break') {
+    //     node.valeu = 'break';
+    //     break;
+    // } else if (node.type === 'continue') {
+    //     node.value = 'continue';
+    //     continue;
+    // } else if (node.type === 'return') {
+    //     executeReturn(node, symbols);
+    }
+}
+
+export default{ Synthesis, getValue, executeSentences };
