@@ -294,24 +294,24 @@ function getValue (node) {
         case '&&':            
             node.type = 'boolean';
             if (node.children[0].type === 'boolean' && node.children[1].type === 'boolean') {
-                return (left && right).toString();
+                return (left == 'true' && right == 'true').toString();
             }
             console.log('Semantic Error: Invalid operands for'+ left +' && ' + right);
-            return (left && right).toString();
+            return (left == 'true' && right == 'true').toString();
         case '||':
             node.type = 'boolean';
             if (node.children[0].type === 'boolean' && node.children[1].type === 'boolean') {
-                return (left || right).toString();
+                return (left == 'true' || right == 'true').toString();
             }
             console.log('Semantic Error: Invalid operands for'+ left +' || ' + right);
-            return (left || right).toString();
+            return (left == 'true' || right == 'true').toString();
         case '!':
             node.type = 'boolean';
             if (node.children[0].type === 'boolean') {
-                return (!right).toString();
+                return (!(right == 'true')).toString();
             }
             console.log('Semantic Error: Invalid operand for ! ' + right);
-            return (!right).toString();;
+            return (!(right == 'true')).toString();;
         
         }
     }
