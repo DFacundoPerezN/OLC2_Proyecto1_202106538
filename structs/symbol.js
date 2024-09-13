@@ -1,4 +1,4 @@
-class Symbol {
+class Symbol_s {
   constructor(id, type_symbol, type_var, line, column, ambit) {
     this.id = id;
     this.type_symbol = type_symbol;
@@ -9,3 +9,5 @@ class Symbol {
     this.value = null;
   }
 }
+
+export default Symbol_s;

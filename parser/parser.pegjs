@@ -45,10 +45,10 @@
 
 }
 
-start = sentences
+start = sens:sentences {return createNode("Entry", sens)}
 
 sentences = sentence:sentence sentences:sentences { return [sentence].concat(sentences); }
-	/sentence _
+	/sentence:sentence _ (coments)?  { return sentence; }
     /_ {return []}
 
 sentence =  instruc
@@ -101,11 +101,11 @@ sentenceCase = _ "case" _ exp:exp _ ":" _ sens:sentences sC:sentenceCase
 //Sentence For
 sentenceFor = _"for"_"("_ type:type _ element:id _":"_ array:id ")"_ sens:sentenceBlock 
 			{return createNode("for_Array", [type, element, array, sens]);}
-			/ _"for"_"("_ dec:(dec/assing)_ ";" _ cond:and _";"_ inc:(inc/assing) _")"_ sens:sentenceBlock
+			/ _"for"_"("_ dec:(decl/assing)_ ";" _ cond:and _";"_ inc:(inc/assing) _")"_ sens:sentenceBlock
             {return createNode("for", [dec, cond, inc, sens]);}
 
 // Instruccions
-instruc = ( arrayDecl /  inc _ ";"/ dec _ ";" / assing _ ";")
+instruc = i:(arrayDecl /  inc  / assing/ decl) _ ";" {return i;}
 
 //Incre
 inc "Incremental" = _ id:id _ inc:("+="/"-=")_ exp:exp
@@ -114,9 +114,9 @@ inc "Incremental" = _ id:id _ inc:("+="/"-=")_ exp:exp
             			{return createNode(inc, id);}
     
 //Declaration 
-dec = type:type id:id "=" exp:exp 	{ return createNode("declaration", [type, id, exp]); }
+decl = type:type id:id _ "=" exp:exp 	{ return createNode("declaration", [type, id, exp]); }
     /type:type id:id 					{ return createNode("declaration", [type, id]); }
-	/ _ "var" _ id:id "=" exp:exp 	{ return createNode("declaration", ["var", id, exp]); }
+	/ _ "var" _ id:id _ "=" exp:exp 	{ return createNode("declaration", ["var", id, exp]); }
     /inc
     
 // Assignment
@@ -125,7 +125,7 @@ assing = _ id:id _ "=" exp:exp { return createNode("assign", [id, exp]); }
 // valor
 exp = op3/ logical 
 //Logical 
-logical = and
+logical = and 
 
 and = left:or "||" right:and { return createNode("||", [left, right]); }
 	/or
@@ -138,18 +138,12 @@ not = _"!" right:not 		{ return createNode("!", [right]); }
 
 // Comparison operation
 //Igualdad
-equal = left:operand _ op:("=="/"!=") _ right:equal { return createNode(op, [left, right]); }
-	/ operand
-
-operand = _"(" exp:exp ")"_ { return exp; }
-        / relational
+equal = left:relational _ op:("=="/"!=") _ right:equal { return createNode(op, [left, right]); }
+	/ relational
         
 //Relational
-relational = left:comp _ op:(">="/"<="/">"/"<")_ right:relational { return createNode(op, [left, right]); }
-	/ comp
-
-comp =  _"(" exp:exp ")"_ 	{ return exp; }
-        / sum        
+relational = left:sum _ op:(">="/"<="/">"/"<")_ right:relational { return createNode(op, [left, right]); }
+	/ sum        
         
 // Arithmetic operations
 sum = left:mul op:("+" / "-") right:sum
@@ -164,10 +158,10 @@ mod = left:neg op:"%" right:mod
 	{ return createNode(op, [left, right]); }
 / neg
 
-neg = _"-"_ right:exp
+neg = _"-"_ right:neg
 		{ return createNode("-", [right]); } 
 		/ ntF:nativeFunction 	{return ntF;}
-        /_ terminal:term 	{return terminal;}
+        /_ terminal:term _	{return terminal;}
         
 term =  decimal:float 	{return createNodeVar("float", decimal);} //{ return parseFloat(decimal); } 
 	/ num:entero 		{return createNodeVar("int", num);}	//{ return parseInt(num); } 
@@ -188,7 +182,8 @@ nativeFunction = _ "parseInt(" _ str:exp _ ")"  	{return createNode("parseInt", 
 				/ _ "typeof" _ exp:exp _ 			{return createNode("typeof",[exp]);}
     
 //Operador 3
-op3 = _ cond:and _ "?" _ expT:exp _ ":" _ expF:exp  {return createNode("op3", [cond, expT, expF]);} // if(cond.getvalue()) {op3.value=expF} else{op3.value=expF}
+op3 = _ cond:and _ "?" _ expT:exp _ ":" _ expF:exp  
+		{return createNode("op3", [cond, expT, expF]);} // if(cond.getvalue()) {op3.value=expF} else{op3.value=expF}
 
 //Sentence Print
 print = _ "System.out.println(" list:listcons ")" _ ";" {return createNode("print", [list]);}
@@ -197,12 +192,12 @@ listcons = listelement:exp "," listcons:listcons {return [listelement].concat(li
 	/ listelement:exp 								{return listelement}
  
 //Arrays
-arrayDecl =  arrayCons _ "="_ arrayExp _ ";"
+arrayDecl =  id:arrayCons _ "="_ Aexp:arrayExp { return createNode("Array_declaration", [ id, Aexp]); }
 
-arrayCons = type _("[]")+ _ id 
-arrayExp = "new" _ type _ ("["_ entero _"]")+
+arrayCons = type:type _ cor:("[]")+ _ id:id { return createNode("ID", [ type, cor, id ]); }
+arrayExp = "new" _ type:type _ ("["_ intg:entero _"]")+ {return createNode("new", [type, intg]);}
 	/ id
-	/ "{" _ list:listcons _ "}"  
+	/ "{" _ list:listcons _ "}"  { return createNode("list", list); }
     
 //Void
 void = _ "void" _ id:id _ "("_")" sens:sentencesVoid {return createNode("void", sens.concat(re));}
@@ -211,12 +206,12 @@ sentencesVoid = _"{"_ sens:sentences re:return (sentences)? "}"_{return createNo
 				/sentenceBlock 
 
 _ "Whitespace" = [ \t\n\r]*
-entero = _ int:[0-9]+ _ 						{return text()}
-float "Float" = _ [0-9]+"."([0-9]+)? _ 			{return text()}
-boolean =  _ bool:("true"/ "false")_ 			{return bool}
-string "String" = _"\"" a:([^"]/escapes)*"\""_ 	{return text()}
-char "char" = _  "'"[^']"'"_ 					{return text()}
-id "ID" = val:(!reserved [A-Za-z]["_"A-Za-z0-9]*) _ 		{return createNodeID(location()?.start.line, location()?.start.column, text());}
+entero = int:[0-9]+  						{return text()}
+float "Float" = [0-9]+"."([0-9]+)?  			{return text()}
+boolean =  bool:("true"/ "false") 			{return bool}
+string "String" = "\"" a:([^"]/escapes)*"\"" 	{return text()}
+char "char" =  "'"[^']"'"_ 					{return text()}
+id "ID" = val:(!reserved [A-Za-z]["_"A-Za-z0-9]*) 		{return createNodeID(location()?.start.line, location()?.start.column, text());}
 
 reserved = type / "if" / "else" /"switch" / "case" /"for"
 

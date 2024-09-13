@@ -1,194 +1,208 @@
-const { exec } = require('child_process');
-const synthesis = require('./synthesis.js');
+//const { exec } = require('child_process');
+//const {synthesis} = require('./synthesis.js');
+import { getValue } from './synthesis.js' ;
+import {globalPower} from './synthesis.js' ;
 
-executeDeclaration = (node, symbols) => {
-    // const { id, type, value } = declaration;
-    // symbols[id] = { type, value };  
-    if(node.children[0] ==="var"){
-        let id = node.children[1].value;
-        let value = synthesis.getValue(node.children[2], symbols);
-        let type = node.children[2].value;
-        symbols[id] = { type, value };
-    }else if (node.children.leght===2){
-        //executeDeclaration(node.children[0], symbols)
+
+function executePrint(node) {
+    //const console = require('console');
+    console.log('Map size: '+globalPower.IdMap.size);
+    for (let clavevalor of globalPower.IdMap.entries()) {
+        console.log(clavevalor);
+    }
+    for (let i = 0; i < node.children.length; i++) {
+        let value = getValue(node.children[i]).replace(/"/g , '') + '\n';
+        globalPower.output += value ;
+        console.log('Must print: '+value);
+    }
+    return globalPower.output;
+}
+
+function executeDeclaration(node ) {
+    if (!(globalPower.IdMap instanceof Map)) {
+        console.error("globalPower.IdMap must be a Map, instead got: " + typeof globalPower.IdMap);
+        return;
+    }
+    if (node.children[0] === "var") { //case: "var" <id> "=" <value> ";"
+        console.log('Declaration: '+node.children[0]);
+        let id = node.children[1].type;
+        let value = getValue(node.children[2] );
+        let type = node.children[2].type;
+        globalPower.IdMap.set(id, { type, value }); //add the variable to the map; the id is the key to an object with the type and the value
+        
+    } else if (node.children.length === 2) {    //case: <type> <value> ";"
         let type = node.children[0];
         let id = node.children[1].type;
         let value = "null";
-        symbols[id] = { type, value };
-    }else{
-        let type1 = node.children[0];
+        globalPower.IdMap.set(id, { type, value }); 
+        //add the variable to the map; the id is the key to an object with the type and the value
+    } else {                            //case: <type> <id> "=" <value> ";"
+        let type = node.children[0];
         let id = node.children[1].type;
-        let type = node.children[2].value;        
-        let value = synthesis.getValue(node.children[2], symbols);
-        if(type1 !== type && !(type==='int' && type1 =='float')){//Verify if the types are the same
-            console.log("Error: Type mismatch: " + type1 + " !== " + type);
+        let type2 = node.children[2].type;
+        let value = getValue(node.children[2] );
+        if (type !== type2 && !(type === 'float' && type2 === 'int')) { // Verify if the types are the same or if the type is float and the type1 is int
+            console.log("Error: Type mismatch: " + type + " !== " + type2);
         }
-        symbols[id] = { type1, value };
-
+        globalPower.IdMap.set(id, { type, value }); 
+        //add the variable to the map; the id is the key to an object with the type and the value
     }
-    console.log(symbols);
+    console.log(globalPower.IdMap);
+    return globalPower.IdMap;
 }
 
-executeAssignation = (node, symbols) => {
+function executeAssignment(node ) {
     let id = node.children[0].value;
-    let value = synthesis.getValue(node.children[1], symbols);
-    let type = node.children[1].value;
-    if (synthesis.getValue(node.children[0], symbols) !== "null") {
-        if (type !== symbols[id].type) {
-            console.log("Error: Type mismatch: " + symbols[id].type + " !== " + type);
+    let value = getValue(node.children[1] );
+    let type = node.children[1].type;
+
+    if (globalPower.IdMap.get(id) !== undefined) {
+        if (type !== globalPower.IdMap.get(id) && !(globalPower.IdMap.get(id) === 'float' && type === 'int')) {
+            console.log("Error: Type mismatch: " + globalPower.IdMap.get(id).type + " !== " + type);
+            return;
         }
+    } else {
+        console.log("Error: Variable " + id + " is not declared.");
+        return;
     }
-    symbols[id] = { type, value };
-    console.log(symbols);
+
+    globalPower.IdMap.set(id, { type, value });
+    console.log(globalPower.IdMap);
+    return globalPower.IdMap;
 }
 
-executePrint = (node, symbols) => {
-    console = require('console');
-    exit = '';
-    for(let i = 0; i < node.children.length; i++){
-        let value = synthesis.getValue(node.children[i], symbols);
-        exit += value;
-    }
-    return exit;
-}
 
-executeIf = (node, symbols) => {
+function executeIf(node ) {
     //first child is the condition, 
     //second child is the code block
     //the next blocks are the else ifs
-    let condition = synthesis.getValue(node.children[0], symbols);
-    if (condition =='true') {
-        sentences: node;
-        sentences = node.children[1];
+    let condition = getValue(node.children[0] );
+    if (condition == 'true') {
+        let sentences = node.children[1].children;
         for (let i = 0; i < sentences.length; i++) {
             let sentence = sentences[i];
             if (sentence.type === 'break' || sentence.value === 'break') {
                 node.value = 'break';
                 break;
             }
-            else if (sentence.type === 'continue'|| sentence.value === 'continue') {
+            else if (sentence.type === 'continue' || sentence.value === 'continue') {
                 node.value = 'continue';
                 break;
-            }else{
-                synthesis.executeSentence(sentence, symbols);
+            } else {
+                synthesis.executeSentence(sentence );
             }
         }
-        return synthesis.getValue(node.children[1], symbols);
+        return getValue(node.children[1] );
     } else {
         //else ifs
-        for (let i = 2; i < sentences.length; i++) {
-            elseNode = sentences[i];
-            if(elseNode.type === 'else if'){
-                let condition = synthesis.getValue(elseNode.children[0], symbols);
+        for (let i = 2; i < node.children.length; i++) {
+            let elseNode = node.children[i];
+            if (elseNode.type === 'else if') {
+                let condition = getValue(elseNode.children[0] );
                 if (condition == 'true') {
-                    sentences = elseNode.children[1].children;
-                    for (let i = 0; i < sentences.length; i++) {
-                        let sentence = sentences[i];
+                    let sentences = elseNode.children[1].children;
+                    for (let j = 0; j < sentences.length; j++) {
+                        let sentence = sentences[j];
                         if (sentence.type === 'break' || sentence.value === 'break') {
                             node.value = 'break';
                             break;
                         }
-                        else if (sentence.type === 'continue'|| sentence.value === 'continue') {
+                        else if (sentence.type === 'continue' || sentence.value === 'continue') {
                             node.value = 'continue';
                             break;
-                        }else{
-                            synthesis.executeSentence(sentence, symbols);
+                        } else {
+                            synthesis.executeSentence(sentence );
                         }
                     }
-                    return synthesis.getValue(elseNode.children[1], symbols);
-                }else{
+                    return getValue(elseNode.children[1] );
+                } else {
                     continue;
                 }
-            }else{
-                sentences = elseNode.children[0].children;
-                    for (let i = 0; i < sentences.length; i++) {
-                        let sentence = sentences[i];
-                        if (sentence.type === 'break' || sentence.value === 'break') {
-                            node.value = 'break';
-                            break;
-                        }
-                        else if (sentence.type === 'continue'|| sentence.value === 'continue') {
-                            node.value = 'continue';
-                            break;
-                        }else if (sentence.type === 'return') {
-                            node.type = 'return';
-                            if (sentence.children[0] !== null) {
-                                node.value = synthesis.getValue(sentence.children[0], symbols);
-                                return synthesis.getValue(sentence.children[0], symbols);
-                            }
-                            break;
-                        }else{
-                            synthesis.executeSentence(sentence, symbols);
-                        }
+            } else {
+                let sentences = elseNode.children[0].children;
+                for (let j = 0; j < sentences.length; j++) {
+                    let sentence = sentences[j];
+                    if (sentence.type === 'break' || sentence.value === 'break') {
+                        node.value = 'break';
+                        break;
                     }
+                    else if (sentence.type === 'continue' || sentence.value === 'continue') {
+                        node.value = 'continue';
+                        break;
+                    } else if (sentence.type === 'return') {
+                        node.type = 'return';
+                        if (sentence.children[0] !== null) {
+                            node.value = getValue(sentence.children[0] );
+                            return getValue(sentence.children[0] );
+                        }
+                        break;
+                    } else {
+                        synthesis.executeSentence(sentence );
+                    }
+                }
             }
         }
-        return synthesis.getValue(node.children[2], symbols);
+        return getValue(node.children[2] );
     }
 }
 
-executeSwitch = (node, symbols) => {
+function executeSwitch(node ) {
     //first child is the value to compare, 
     //the other children are the cases and the default (if there is one)
-    let val = synthesis.getValue(node.children[0], symbols);
-    for (let i=1 ; i<node.children.length; i++){
+    let val = getValue(node.children[0] );
+    for (let i = 1; i < node.children.length; i++) {
         let caseNode = node.children[i];
         //first child is the value to compare,
         //the other children are the sentences
-        if(caseNode.type === 'case'){
-            let caseVal = synthesis.getValue(caseNode.children[0], symbols);
-            if (val === caseVal){
+        if (caseNode.type === 'case') {
+            let caseVal = getValue(caseNode.children[0] );
+            if (val === caseVal) {
                 let sentences = caseNode.children;
-                for (let i = 1; i < sentences.length; i++) {
-                    let sentence = sentences[i];
+                for (let j = 1; j < sentences.length; j++) {
+                    let sentence = sentences[j];
                     if (sentence.type === 'break' || sentence.value === 'break') {
                         node.value = 'break';
-                        break;                    
-                    }
-                    
-                    else if (sentence.type === 'return') {
+                        break;
+                    } else if (sentence.type === 'return') {
                         node.type = 'return';
                         if (sentence.children[0] !== null) {
-                            node.value = synthesis.getValue(sentence.children[0], symbols);
-                            return synthesis.getValue(sentence.children[0], symbols);
+                            node.value = getValue(sentence.children[0] );
+                            return getValue(sentence.children[0] );
                         }
                         break;
-                    }else{
-                        synthesis.executeSentence(sentence, symbols);
+                    } else {
+                        synthesis.executeSentence(sentence );
                     }
                 }
-                //let finalV = synthesis.getValue(caseNode.children[1], symbols);
             }
-        }else if(caseNode.type === 'default'){
+        } else if (caseNode.type === 'default') {
             //the children are the sentences
             let sentences = caseNode.children;
-            for (let i = 0; i < sentences.length; i++) {
-                let sentence = sentences[i];
+            for (let j = 0; j < sentences.length; j++) {
+                let sentence = sentences[j];
                 if (sentence.type === 'break' || sentence.value === 'break') {
                     node.value = 'break';
                     break;
-                }                
-                else if (sentence.type === 'return') {
+                } else if (sentence.type === 'return') {
                     node.type = 'return';
                     if (sentence.children[0] !== null) {
-                        node.value = synthesis.getValue(sentence.children[0], symbols);
-                        return synthesis.getValue(sentence.children[0], symbols);
+                        node.value = getValue(sentence.children[0] );
+                        return getValue(sentence.children[0] );
                     }
                     break;
-                }else{
-                    synthesis.executeSentence(sentence, symbols);
+                } else {
+                    synthesis.executeSentence(sentence );
                 }
             }
-            return synthesis.getValue(caseNode.children[0], symbols);
+            return getValue(caseNode.children[0] );
         }
-        //return finalV;
     }
 }
 
-executeWhile = (node, symbols) => {
+function executeWhile(node ) {
     //first child is the condition, 
     //second child is the code block
-    let condition = synthesis.getValue(node.children[0], symbols);
+    let condition = getValue(node.children[0] );
     while (condition == 'true') {
         let sentences = node.children[1].children;
         for (let i = 0; i < sentences.length; i++) {
@@ -200,28 +214,28 @@ executeWhile = (node, symbols) => {
             else if (sentence.type === 'continue'|| sentence.value === 'continue') {
                 //node.value = 'continue';
                 continue;
-            }else if (sentence.type === 'return') {
+            } else if (sentence.type === 'return') {
                 //node.type = 'return';
                 if (sentence.children[0] !== null) {
-                    node.value = synthesis.getValue(sentence.children[0], symbols);
-                    return synthesis.getValue(sentence.children[0], symbols);
+                    node.value = getValue(sentence.children[0] );
+                    return getValue(sentence.children[0] );
                 }
                 break;
-            }else{
-                synthesis.executeSentence(sentence, symbols);
+            } else {
+                synthesis.executeSentence(sentence );
             }
         }
-        condition = synthesis.getValue(node.children[0], symbols);
+        condition = getValue(node.children[0] );
     }
 }
 
-executeFor = (node, symbols) => {
+function executeFor(node ) {
     //first child is the declaration, 
     //second child is the condition,
     //third child is the assignation,
     //fourth child is the code block
-    executeDeclaration(node.children[0], symbols);
-    let condition = synthesis.getValue(node.children[1], symbols);
+    executeDeclaration(node.children[0] );
+    let condition = getValue(node.children[1] );
     while (condition == 'true') {
         let sentences = node.children[3].children;
         for (let i = 0; i < sentences.length; i++) {
@@ -233,18 +247,39 @@ executeFor = (node, symbols) => {
             else if (sentence.type === 'continue'|| sentence.value === 'continue' || sentences[i-1].value === 'continue') {
                 node.value = 'continue';
                 continue;
-            }else if (sentence.type === 'return') {
+            } else if (sentence.type === 'return') {
                 node.type = 'return';
                 if (sentence.children[0] !== null) {
-                    node.value = synthesis.getValue(sentence.children[0], symbols);
-                    return synthesis.getValue(sentence.children[0], symbols);
+                    node.value = getValue(sentence.children[0] );
+                    return getValue(sentence.children[0] );
                 }
                 break;
-            }else{
-                synthesis.executeSentence(sentence, symbols);
+            } else {
+                synthesis.executeSentence(sentence );
             }
         }
-        executeAssignation(node.children[2], symbols);
-        condition = synthesis.getValue(node.children[1], symbols);
+        executeAssignation(node.children[2] );
+        condition = getValue(node.children[1] );
     }
+}
+
+function executeFunction (node ) {
+    //first child is the id, 
+    //second child is the parameters,
+    //third child is the code block
+    let id = node.children[0].value;
+    let parameters = node.children[1];
+    let codeBlock = node.children[2];
+    //globalPower.IdMap[id] = {parameters, codeBlock};
+}
+
+export{
+    executePrint,
+    executeDeclaration,
+    executeAssignment,
+    executeIf,
+    executeSwitch,
+    executeWhile,
+    executeFor,
+    executeFunction
 }
