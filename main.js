@@ -25,5 +25,7 @@ execute.addEventListener("click", () => {
   interpreter.ast = tree;
 
   interpreter.execute();
-  salida.innerHTML = JSON.stringify(tree, null, 2);
+  //salida.innerHTML = JSON.stringify(tree, null, 2);
+  salida.innerHTML = '';
+  salida.innerHTML = interpreter.getOutput();
 });

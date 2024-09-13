@@ -39,6 +39,14 @@ class Synthesis {
     this.ast = ast;
   }
 
+  getSymbolTable() {
+    return this.symbolTable;
+  }
+
+  getOutput() {
+    return globalPower.output;
+  }
+
 }
 /**
      * @param {BaseNode} node
@@ -192,25 +200,29 @@ function getValue (node) {
         case '==':
             node.type = 'boolean';
             if (node.children[0].type === node.children[1].type) {    
-                return left === right;
+                return (left == right).toString();
             } else if (node.children[0].type === 'int' && node.children[1].type === 'float') {
-                return parseInt(left) === parseFloat(right);
+                const value = parseInt(left) === parseFloat(right);
+                return value.toString();
             } else if (node.children[0].type === 'float' && node.children[1].type === 'int') {
-                return parseFloat(left) === parseInt(right);
+                const value = parseFloat(left) === parseInt(right);
+                return value.toString();
             }
             console.log('Semantic Error: Invalid operands for'+ left +' == ' + right);
-            return left === right;
+            return (left == right).toString();
         case '!=':
             node.type = 'boolean';
-            if (node.children[0].type === node.children[1].type) {
-                return left !== right;
+            if (node.children[0].type === node.children[1].type) {   
+                return (left !== right).toString();
             } else if (node.children[0].type === 'int' && node.children[1].type === 'float') {
-                return parseInt(left) !== parseFloat(right);
+                const value = parseInt(left) !== parseFloat(right);
+                return value.toString();
             } else if (node.children[0].type === 'float' && node.children[1].type === 'int') {
-                return parseFloat(left) !== parseInt(right);
+                const value = parseFloat(left) === parseInt(right);
+                return value.toString();
             }
             console.log('Semantic Error: Invalid operands for '+ left +' != ' + right);
-            return left != right;
+            return (left != right).toString();
         case '>':
             node.type = 'boolean';
             if (node.children[0].type === 'char' && node.children[1].type === 'char') {//If one of the operands is a string, we concatenate them

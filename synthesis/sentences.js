@@ -11,8 +11,8 @@ function executePrint(node) {
         console.log(clavevalor);
     }
     for (let i = 0; i < node.children.length; i++) {
-        let value = getValue(node.children[i]).replace(/"/g , '') + '\n';
-        globalPower.output += value ;
+        let value = getValue(node.children[i]);
+        globalPower.output += value.replace(/"/g , '') + '\n' ;
         console.log('Must print: '+value);
     }
     return globalPower.output;
