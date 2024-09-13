@@ -5,16 +5,18 @@ import {globalPower} from './synthesis.js' ;
 
 
 function executePrint(node) {
-    //const console = require('console');
-    console.log('Map size: '+globalPower.IdMap.size);
+    let innerOutput = '';
+    //checking the map
+    console.log('Map size: '+globalPower.IdMap.size); 
     for (let clavevalor of globalPower.IdMap.entries()) {
         console.log(clavevalor);
     }
     for (let i = 0; i < node.children.length; i++) {
         let value = getValue(node.children[i]);
-        globalPower.output += value.replace(/"/g , '') + '\n' ;
+        innerOutput += value.replace(/"/g , '') ;
         console.log('Must print: '+value);
     }
+    globalPower.output += innerOutput.replace('\\n' , '\n')+ '\n';
     return globalPower.output;
 }
 

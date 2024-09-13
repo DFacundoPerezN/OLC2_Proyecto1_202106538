@@ -186,10 +186,10 @@ op3 = _ cond:and _ "?" _ expT:exp _ ":" _ expF:exp
 		{return createNode("op3", [cond, expT, expF]);} // if(cond.getvalue()) {op3.value=expF} else{op3.value=expF}
 
 //Sentence Print
-print = _ "System.out.println(" list:listcons ")" _ ";" {return createNode("print", [list]);}
+print = _ "System.out.println(" list:listcons ")" _ ";" {return createNode("print", list);}
 
 listcons = listelement:exp "," listcons:listcons {return [listelement].concat(listcons);}
-	/ listelement:exp 								{return listelement}
+	/ listelement:exp 								{return [listelement]}
  
 //Arrays
 arrayDecl =  id:arrayCons _ "="_ Aexp:arrayExp { return createNode("Array_declaration", [ id, Aexp]); }

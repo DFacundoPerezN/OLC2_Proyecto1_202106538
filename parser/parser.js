@@ -383,9 +383,9 @@ function peg$parse(input, options) {
   var peg$f52 = function(exp) {return createNode("toUpperCase", [exp]);};
   var peg$f53 = function(exp) {return createNode("typeof",[exp]);};
   var peg$f54 = function(cond, expT, expF) {return createNode("op3", [cond, expT, expF]);};
-  var peg$f55 = function(list) {return createNode("print", [list]);};
+  var peg$f55 = function(list) {return createNode("print", list);};
   var peg$f56 = function(listelement, listcons) {return [listelement].concat(listcons);};
-  var peg$f57 = function(listelement) {return listelement};
+  var peg$f57 = function(listelement) {return [listelement]};
   var peg$f58 = function(id, Aexp) { return createNode("Array_declaration", [ id, Aexp]); };
   var peg$f59 = function(type, cor, id) { return createNode("ID", [ type, cor, id ]); };
   var peg$f60 = function(type) {return createNode("new", [type, intg]);};
