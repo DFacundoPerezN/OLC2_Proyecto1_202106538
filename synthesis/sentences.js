@@ -77,24 +77,27 @@ function executeAssignment(node ) {
 }
 
 
-function executeIf(node ) {
+function executeIf(node) {
     //first child is the condition, 
     //second child is the code block
     //the next blocks are the else ifs
     let condition = getValue(node.children[0] );
     if (condition == 'true') {
         let sentences = node.children[1].children;
+        //console.log('Sentences in If: '+JSON.stringify(sentences, null, 2));
         for (let i = 0; i < sentences.length; i++) {
             let sentence = sentences[i];
+            //console.log('Sentence Type: '+sentence.type + '; Value: '+sentence.value);
             if (sentence.type === 'break' || sentence.value === 'break') {
                 node.value = 'break';
+                console.log('Break in If ' + node.value);
                 break;
             }
             else if (sentence.type === 'continue' || sentence.value === 'continue') {
                 node.value = 'continue';
                 break;
             } else {
-                executeSentence(sentence );
+                executeSentence(sentence);
             }
         }
         return getValue(node.children[1] );
@@ -110,6 +113,7 @@ function executeIf(node ) {
                         let sentence = sentences[j];
                         if (sentence.type === 'break' || sentence.value === 'break') {
                             node.value = 'break';
+                            node.type = 'break';
                             break;
                         }
                         else if (sentence.type === 'continue' || sentence.value === 'continue') {
@@ -129,6 +133,7 @@ function executeIf(node ) {
                     let sentence = sentences[j];
                     if (sentence.type === 'break' || sentence.value === 'break') {
                         node.value = 'break';
+                        node.type = 'break';
                         break;
                     }
                     else if (sentence.type === 'continue' || sentence.value === 'continue') {
@@ -147,28 +152,37 @@ function executeIf(node ) {
                 }
             }
         }
-        return getValue(node.children[2] );
     }
 }
 
 function executeSwitch(node ) {
     //first child is the value to compare, 
     //the other children are the cases and the default (if there is one)
-    let val = getValue(node.children[0] );
+    let val = getValue(node.children[0]);
+    let aproved = false; //to check if a case was aproved
     for (let i = 1; i < node.children.length; i++) {
         let caseNode = node.children[i];
-        //first child is the value to compare,
-        //the other children are the sentences
+        //if it is a case
         if (caseNode.type === 'case') {
-            let caseVal = getValue(caseNode.children[0] );
-            if (val === caseVal) {
-                let sentences = caseNode.children;
-                for (let j = 1; j < sentences.length; j++) {
+            //the first child is the value to compare
+            let caseVal = getValue(caseNode.children[0]);
+            console.log('Comparing: '+val+ ' with '+caseVal);
+            if (val === caseVal || aproved) {
+                aproved = true;
+                //console.log('Matched '+val+ ' with '+caseVal);
+                //the second child is the list of sentences
+                let sentences = caseNode.children[1];
+                console.log('Sentences: '+JSON.stringify(sentences, null, 2));
+                for (let j = 0; j < sentences.length; j++) {
                     let sentence = sentences[j];
                     if (sentence.type === 'break' || sentence.value === 'break') {
+                        aproved = false;
+                        i = node.children.length; //to break the loop
+                        console.log('Break');
                         node.value = 'break';
                         break;
                     } else if (sentence.type === 'return') {
+                        console.log('return');
                         node.type = 'return';
                         if (sentence.children[0] !== null) {
                             node.value = getValue(sentence.children[0] );
@@ -227,23 +241,28 @@ function executeWhile(node) {
         //console.log("Sentences : " +JSON.stringify(sentences, null, 2));
         let sentences = Nodeblock.children;
         for (let i = 0; i < sentences.length; i++) {
-            let sentence = sentences[i];
-            if (sentence.type === 'break' || sentence.value === 'break') {
-                //node.value = 'break';
-                break;
-            }
-            else if (sentence.type === 'continue'|| sentence.value === 'continue') {
-                //node.value = 'continue';
-                continue;
-            } else if (sentence.type === 'return') {
+            let sentence = sentences[i];            
+            //console.log('Sentence Type: '+sentence.type + '; Value: '+sentence.value);
+            if (sentence.type === 'return') {
                 //node.type = 'return';
                 if (sentence.children[0] !== null) {
                     node.value = getValue(Nodecondition );
                     return node.value;
                 }
-                break;
+                return;
             } else {
                 executeSentence(sentence);
+                console.log("Sentence After execute: " +JSON.stringify(sentence, null, 2));
+                console.log('Sentence value: '+sentence.value);
+                if (sentence.value == 'break') {
+                    console.log('Break in While');
+                    condition = 'false';
+                    return;
+                }
+                else if (sentence.value == 'continue') {
+                    console.log('Continue in While');
+                    break;
+                }
             }
         }
         
@@ -268,24 +287,7 @@ function executeFor(node ) {
         let sentences = Nodeblock.children;
         for (let i = 0; i < sentences.length; i++) {
             let sentence = sentences[i];
-            if (i>0) {  
-                if ( sentences[i-1].value === 'break') {
-                    node.value = 'break';
-                    break;
-                }
-                else if (sentences[i-1].value === 'continue') {
-                    node.value = 'continue';
-                    continue;
-                }
-            }
-            if (sentence.type === 'break' || sentence.value === 'break') {
-                node.value = 'break';
-                break;
-            }
-            else if (sentence.type === 'continue'|| sentence.value === 'continue') {
-                node.value = 'continue';
-                continue;
-            } else if (sentence.type === 'return') {
+            if (sentence.type === 'return') {
                 node.type = 'return';
                 if (sentence.children[0] !== null) {
                     node.value = getValue(sentence.children[0] );
@@ -293,7 +295,18 @@ function executeFor(node ) {
                 }
                 break;
             } else {
-                executeSentence(sentence );
+                executeSentence(sentence);
+                console.log("Sentence After execute: " +JSON.stringify(sentence, null, 2));
+                console.log('Sentence value: '+sentence.value);
+                if (sentence.value == 'break') {
+                    console.log('Break in While');
+                    condition = 'false';
+                    return;
+                }
+                else if (sentence.value == 'continue') {
+                    console.log('Continue in While');
+                    break;
+                }
             }
         }
         NodeInc = deepClone(node.children[2]);  // Reset the increment node to not modify;

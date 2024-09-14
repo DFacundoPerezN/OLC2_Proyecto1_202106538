@@ -77,7 +77,7 @@ function getValue (node) {
             console.log('Semantic Error: Variable '+ node.type +' not found');
             return null;
         } else {
-            console.log('trying to get value of a sentences node');
+            console.log('trying to get value of a '+node.type+' node');
             return null;
         }
     } else if(node.type ==='parseInt'){
@@ -352,7 +352,11 @@ function executeSentence (node) {
         executeFor(node);
     } else if (node.type === 'switch') {
         executeSwitch(node);
-    } 
+    } else if(node.type === 'break'){
+        return 'break';
+    } else if(node.type === 'continue'){
+        return 'continue';
+    }
     
 }
 
