@@ -14,7 +14,7 @@ function executePrint(node) {
     }
     for (let i = 0; i < node.children.length; i++) {
         let value = getValue(node.children[i]);
-        console.log('type of value: '+ typeof value);
+        //console.log('type of value: '+ typeof value);
         console.log('value: '+ JSON.stringify(value, null, 2));
         innerOutput += value.replace(/"/g , '') ;
         console.log('Must print: '+value);
@@ -257,17 +257,32 @@ function executeFor(node ) {
     //second child is the condition,
     //third child is the assignation,
     //fourth child is the code block
-    executeDeclaration(node.children[0] );
-    let condition = getValue(node.children[1] );
+    executeDeclaration(node.children[0]);
+    let Nodecondition = deepClone(node.children[1]);  // Clone the condition node to not modify;
+    let condition = getValue(Nodecondition);
+    let NodeInc = deepClone(node.children[2]);  // Clone the increment node to not modify;
+    let Nodeblock = deepClone(node.children[3]);  // Clone the block node to not modify;
     while (condition == 'true') {
-        let sentences = node.children[3].children;
+        Nodecondition = deepClone(node.children[1]);  // Reset the condition node to not modify;
+        Nodeblock = deepClone(node.children[3]);
+        let sentences = Nodeblock.children;
         for (let i = 0; i < sentences.length; i++) {
             let sentence = sentences[i];
-            if (sentence.type === 'break' || sentence.value === 'break' || sentences[i-1].value === 'break') {
+            if (i>0) {  
+                if ( sentences[i-1].value === 'break') {
+                    node.value = 'break';
+                    break;
+                }
+                else if (sentences[i-1].value === 'continue') {
+                    node.value = 'continue';
+                    continue;
+                }
+            }
+            if (sentence.type === 'break' || sentence.value === 'break') {
                 node.value = 'break';
                 break;
             }
-            else if (sentence.type === 'continue'|| sentence.value === 'continue' || sentences[i-1].value === 'continue') {
+            else if (sentence.type === 'continue'|| sentence.value === 'continue') {
                 node.value = 'continue';
                 continue;
             } else if (sentence.type === 'return') {
@@ -281,8 +296,9 @@ function executeFor(node ) {
                 executeSentence(sentence );
             }
         }
-        executeAssignation(node.children[2] );
-        condition = getValue(node.children[1] );
+        NodeInc = deepClone(node.children[2]);  // Reset the increment node to not modify;
+        executeAssignment(NodeInc);
+        condition = getValue(Nodecondition);
     }
 }
 
