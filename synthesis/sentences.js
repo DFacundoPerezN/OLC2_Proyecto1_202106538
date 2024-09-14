@@ -1,6 +1,7 @@
 //const { exec } = require('child_process');
 //const {synthesis} = require('./synthesis.js');
 import { getValue } from './synthesis.js' ;
+import { executeSentence } from './synthesis.js' ;
 import {globalPower} from './synthesis.js' ;
 
 
@@ -13,6 +14,8 @@ function executePrint(node) {
     }
     for (let i = 0; i < node.children.length; i++) {
         let value = getValue(node.children[i]);
+        console.log('type of value: '+ typeof value);
+        console.log('value: '+ JSON.stringify(value, null, 2));
         innerOutput += value.replace(/"/g , '') ;
         console.log('Must print: '+value);
     }
@@ -54,12 +57,12 @@ function executeDeclaration(node ) {
 }
 
 function executeAssignment(node ) {
-    let id = node.children[0].value;
+    let id = node.children[0].type;
     let value = getValue(node.children[1] );
     let type = node.children[1].type;
 
     if (globalPower.IdMap.get(id) !== undefined) {
-        if (type !== globalPower.IdMap.get(id) && !(globalPower.IdMap.get(id) === 'float' && type === 'int')) {
+        if (type !== globalPower.IdMap.get(id).type && !(globalPower.IdMap.get(id) === 'float' && type === 'int')) {
             console.log("Error: Type mismatch: " + globalPower.IdMap.get(id).type + " !== " + type);
             return;
         }
@@ -91,7 +94,7 @@ function executeIf(node ) {
                 node.value = 'continue';
                 break;
             } else {
-                synthesis.executeSentence(sentence );
+                executeSentence(sentence );
             }
         }
         return getValue(node.children[1] );
@@ -113,7 +116,7 @@ function executeIf(node ) {
                             node.value = 'continue';
                             break;
                         } else {
-                            synthesis.executeSentence(sentence );
+                            executeSentence(sentence );
                         }
                     }
                     return getValue(elseNode.children[1] );
@@ -139,7 +142,7 @@ function executeIf(node ) {
                         }
                         break;
                     } else {
-                        synthesis.executeSentence(sentence );
+                        executeSentence(sentence );
                     }
                 }
             }
@@ -173,7 +176,7 @@ function executeSwitch(node ) {
                         }
                         break;
                     } else {
-                        synthesis.executeSentence(sentence );
+                        executeSentence(sentence );
                     }
                 }
             }
@@ -193,7 +196,7 @@ function executeSwitch(node ) {
                     }
                     break;
                 } else {
-                    synthesis.executeSentence(sentence );
+                    executeSentence(sentence );
                 }
             }
             return getValue(caseNode.children[0] );
@@ -201,12 +204,28 @@ function executeSwitch(node ) {
     }
 }
 
-function executeWhile(node ) {
+function deepClone(obj) {
+    return Array.isArray(obj) 
+        ? obj.map(deepClone)
+        : obj !== null && typeof obj === 'object'
+        ? Object.keys(obj).reduce((acc, key) => {
+            acc[key] = deepClone(obj[key]);
+            return acc;
+          }, {})
+        : obj;
+}
+
+function executeWhile(node) {
     //first child is the condition, 
     //second child is the code block
-    let condition = getValue(node.children[0] );
+    let Nodecondition = deepClone(node.children[0]);  // Clone the condition node to not modify;
+    let Nodeblock = deepClone(node.children[1]);  // Clone the block node to not modify;
+    let condition = getValue(Nodecondition);
     while (condition == 'true') {
-        let sentences = node.children[1].children;
+        Nodecondition = deepClone(node.children[0]);  // Reset the condition node to not modify;
+        Nodeblock = deepClone(node.children[1]);
+        //console.log("Sentences : " +JSON.stringify(sentences, null, 2));
+        let sentences = Nodeblock.children;
         for (let i = 0; i < sentences.length; i++) {
             let sentence = sentences[i];
             if (sentence.type === 'break' || sentence.value === 'break') {
@@ -219,15 +238,17 @@ function executeWhile(node ) {
             } else if (sentence.type === 'return') {
                 //node.type = 'return';
                 if (sentence.children[0] !== null) {
-                    node.value = getValue(sentence.children[0] );
-                    return getValue(sentence.children[0] );
+                    node.value = getValue(Nodecondition );
+                    return node.value;
                 }
                 break;
             } else {
-                synthesis.executeSentence(sentence );
+                executeSentence(sentence);
             }
         }
-        condition = getValue(node.children[0] );
+        
+        console.log('conditionNode operator: '+Nodecondition.type);
+        condition = getValue(Nodecondition);
     }
 }
 
@@ -257,7 +278,7 @@ function executeFor(node ) {
                 }
                 break;
             } else {
-                synthesis.executeSentence(sentence );
+                executeSentence(sentence );
             }
         }
         executeAssignation(node.children[2] );

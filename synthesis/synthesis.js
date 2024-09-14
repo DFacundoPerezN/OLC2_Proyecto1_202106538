@@ -47,6 +47,14 @@ class Synthesis {
     return globalPower.output;
   }
 
+  resetOutput() {  
+    globalPower.output = '';
+  }
+
+  resetIdMap() {
+    globalPower.IdMap.clear();
+  }
+  
 }
 /**
      * @param {BaseNode} node
@@ -65,9 +73,11 @@ function getValue (node) {
             const val = globalPower.IdMap.get(node.type).value;
             node.type = globalPower.IdMap.get(node.type).type;
             return val;
-        }
-        else{
+        } else if (node.type !== 'sentences') {
             console.log('Semantic Error: Variable '+ node.type +' not found');
+            return null;
+        } else {
+            console.log('trying to get value of a sentences node');
             return null;
         }
     } else if(node.type ==='parseInt'){
@@ -312,7 +322,9 @@ function getValue (node) {
             }
             console.log('Semantic Error: Invalid operand for ! ' + right);
             return (!(right == 'true')).toString();;
-        
+        default:
+            console.log('Semantic Error: Invalid operator');
+            return null;
         }
     }
 }
