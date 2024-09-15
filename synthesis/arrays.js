@@ -1,6 +1,7 @@
-import { executeSentences } from './synthesis.js';
+import { executeSentence } from './synthesis.js';
 import { getValue } from './synthesis.js' ;
 import {globalPower} from './synthesis.js' ;
+import {deepClone} from './sentences.js' ;
 
 const defaultValuesMap = new Map([
     ['int', '0'],
@@ -11,9 +12,9 @@ const defaultValuesMap = new Map([
 ]);
 
 
-function getArrayValue(node){
+function getArray(node){
     //first child is the name of the array
-    const name = node.children[0].type;
+    const name = node.type;
     return globalPower.IdMap.get(name);
 }
 
@@ -43,7 +44,7 @@ function executeArrayDec(node){
     } else {
         //example: int[] numerosPares = anotherArray;
         //initialize the array with null values
-        array = getArrayValue(valueInfo).value;
+        array = getArray(valueInfo).value;
     }
     globalPower.IdMap.set(name, {type: type, value: array});    //save the array in the IdMap
 
@@ -74,19 +75,48 @@ function executeForEach(node){
     //second child is the name of the variable
     const name = node.children[1].type;
     //third child is the array
-    const array = getArrayValue(node.children[2]).value;
-    //fourth child is the sentences bock
-    const sentences = node.children[3];
+    const array = getArray(node.children[2]).value;
+    console.log('Array: '+array);
+    //fourth child is the sentences block
+    let sentences = deepClone(node.children[3]).children;
+    console.log('number of sentences: '+sentences.length);
     let i = 0;
     while( i < array.length){
         globalPower.IdMap.set(name, {type: type, value: array[i]});
-        executeSentences(sentences); 
+        //console.log('Value: '+array[i]);
+        sentences = deepClone(node.children[3]).children;
+        for (let j = 0; j < sentences.length; j++) {
+            let sentence = sentences[j];            
+            //console.log('Sentence Type: '+sentence.type + '; Value: '+sentence.value);
+            if (sentence.type === 'return') {
+                //node.type = 'return';
+                if (sentence.children[0] !== null) {
+                    node.value = getValue(Nodecondition );
+                    return node.value;
+                }
+                return;
+            } else {
+                executeSentence(sentence);
+                //console.log("Sentence After execute: " +JSON.stringify(sentence, null, 2));
+                console.log('Sentence value: '+sentence.value);
+                if (sentence.value == 'break') {
+                    console.log('Break in While');
+                    condition = 'false';
+                    j = sentences.length;
+                    i = array.length;
+                }
+                else if (sentence.value == 'continue') {
+                    console.log('Continue in While');
+                    j = sentences.length;
+                }
+            }
+        }
         i++;
     }
 }
 
 export {
-    getArrayValue, 
+    getArray, 
     executeArrayDec,
     executeArrayAssign,
     executeForEach};

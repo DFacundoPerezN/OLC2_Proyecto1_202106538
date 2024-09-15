@@ -14,7 +14,7 @@ import {
     executeWhile,
     executeFor } from './sentences.js';
 
-import {executeArrayDec, executeArrayAssign} from './arrays.js';
+import {executeArrayDec, executeArrayAssign, executeForEach} from './arrays.js';
 
 let globalPower = {
     IdMap: new Map(),
@@ -358,7 +358,10 @@ function executeSentence (node) {
         executeWhile(node);
     } else if (node.type === 'for') {
         executeFor(node);
-    } else if (node.type === 'switch') {
+    } else if (node.type === 'forEach') {
+        executeForEach(node);
+    }
+    else if (node.type === 'switch') {
         executeSwitch(node);
     } else if(node.type === 'array_declaration'){
         executeArrayDec(node);

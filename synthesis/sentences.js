@@ -333,5 +333,6 @@ export{
     executeSwitch,
     executeWhile,
     executeFor,
-    executeFunction
+    executeFunction,
+    deepClone
 }
