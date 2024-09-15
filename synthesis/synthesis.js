@@ -74,21 +74,7 @@ function getValue (node) {
         const index = getValue(node.children[1]);
         const array = globalPower.IdMap.get(arrayName).value;
         return array[index];
-    } else if (/^[A-Za-z]+/.test(node.type)) {
-        if (globalPower.IdMap.has(node.type)) {
-            //node.value = node.type;
-            const val = globalPower.IdMap.get(node.type).value;
-            node.type = globalPower.IdMap.get(node.type).type;
-            return val;
-        } else if (node.type !== 'sentences') {
-            console.log('Semantic Error: Variable '+ node.type +' not found');
-            return null;
-        } else {
-            console.log('trying to get value of a '+node.type+' node');
-            return null;
-        }
-    }
-    else if(node.type ==='parseInt'){
+    } else if(node.type ==='parseInt'){
         node.type = 'int';
         node.value = getValue(node.children[0] );
         return node.value;
@@ -96,7 +82,7 @@ function getValue (node) {
         node.type = 'float';
         node.value = getValue(node.children[0] );
         return node.value;
-    } else if(node.type ==='parseString'){
+    } else if(node.type ==='toString'){
         node.type = 'string';
         node.value = '"'+ getValue(node.children[0] )+'"';
         return node.value;
@@ -124,6 +110,19 @@ function getValue (node) {
             return getValue(node.children[1] );
         } else {
             return getValue(node.children[2] );
+        }
+    } else if (/^[A-Za-z]+/.test(node.type)) {
+        if (globalPower.IdMap.has(node.type)) {
+            //node.value = node.type;
+            const val = globalPower.IdMap.get(node.type).value;
+            node.type = globalPower.IdMap.get(node.type).type;
+            return val;
+        } else if (node.type !== 'sentences') {
+            console.log('Semantic Error: Variable '+ node.type +' not found');
+            return null;
+        } else {
+            console.log('trying to get value of a '+node.type+' node');
+            return null;
         }
     }
     else { 
