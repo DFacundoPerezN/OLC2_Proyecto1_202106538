@@ -14,6 +14,7 @@ import {
     executeWhile,
     executeFor } from './sentences.js';
 
+import {executeArrayDec, executeArrayAssign} from './arrays.js';
 
 let globalPower = {
     IdMap: new Map(),
@@ -67,6 +68,12 @@ function getValue (node) {
     if (node.type === 'int' || node.type === 'float' || node.type === 'string' || node.type === 'boolean' || node.type === 'char') {
         return node.value;
     //Then we check if the node is a variable
+    } else if (node.type === 'arrayValue') {
+        console.log('Accessing array Value: '+node.children[0].type);
+        const arrayName = node.children[0].type;
+        const index = getValue(node.children[1]);
+        const array = globalPower.IdMap.get(arrayName).value;
+        return array[index];
     } else if (/^[A-Za-z]+/.test(node.type)) {
         if (globalPower.IdMap.has(node.type)) {
             //node.value = node.type;
@@ -80,7 +87,8 @@ function getValue (node) {
             console.log('trying to get value of a '+node.type+' node');
             return null;
         }
-    } else if(node.type ==='parseInt'){
+    }
+    else if(node.type ==='parseInt'){
         node.type = 'int';
         node.value = getValue(node.children[0] );
         return node.value;
@@ -352,12 +360,16 @@ function executeSentence (node) {
         executeFor(node);
     } else if (node.type === 'switch') {
         executeSwitch(node);
-    } else if(node.type === 'break'){
+    } else if(node.type === 'array_declaration'){
+        executeArrayDec(node);
+    } else if(node.type === 'array_assign'){
+        executeArrayAssign(node);
+    }    
+    else if(node.type === 'break'){
         return 'break';
     } else if(node.type === 'continue'){
         return 'continue';
-    }
-    
+    }    
 }
 
 

@@ -100,12 +100,12 @@ sentenceCase = _ "case" _ exp:exp _ ":" _ sens:sentences sC:sentenceCase
 
 //Sentence For
 sentenceFor = _"for"_"("_ type:type _ element:id _":"_ array:id ")"_ sens:sentenceBlock 
-			{return createNode("for_Array", [type, element, array, sens]);}
+			{return createNode("forEach", [type, element, array, sens]);}
 			/ _"for"_"("_ dec:(decl/assing)_ ";" _ cond:and _";"_ inc:(inc/assing) _")"_ sens:sentenceBlock
             {return createNode("for", [dec, cond, inc, sens]);}
 
 // Instruccions
-instruc = i:(arrayDecl /  inc  / assing/ decl) _ ";" {return i;}
+instruc = i:(arrayDecl/ arrayAssing /  inc  / assing/ decl) _ ";" {return i;}
 
 //Incre
 inc "Incremental" = _ id:id _ inc:("+="/"-=")_ exp:exp
@@ -163,14 +163,15 @@ neg = _"-"_ right:neg
 		/ ntF:nativeFunction 	{return ntF;}
         /_ terminal:term _	{return terminal;}
         
-term =  decimal:float 	{return createNodeVar("float", decimal);} //{ return parseFloat(decimal); } 
+term =  val:id "[" num:exp "]" {return createNode("arrayValue", [val, num]);}
+    /decimal:float 	{return createNodeVar("float", decimal);} //{ return parseFloat(decimal); } 
 	/ num:entero 		{return createNodeVar("int", num);}	//{ return parseInt(num); } 
 	/ b:boolean 		{return createNodeVar("boolean", b);} //{ return b; }
     / s:string 			{return createNodeVar("string", s);} //{ return s; }
     / c:char			{return createNodeVar("char", c);} //{ return c; }
 	/ val:id 			
-    / "(" num:exp ")"_ 	{return num}
-    / val:id ("["_ num:exp _"]")+ {return createNodeVar("Array", text());}
+	/  "(" num:exp ")"_ 	{return num}
+    / val:id ("["_ num:exp _"]")+ {return createNodeVar("ArrayValue", text());}
 
 type = _ type:("int"/"float"/"char"/"boolean"/"string") _ {return type;}
 
@@ -192,13 +193,15 @@ listcons = listelement:exp "," listcons:listcons {return [listelement].concat(li
 	/ listelement:exp 								{return [listelement]}
  
 //Arrays
-arrayDecl =  id:arrayCons _ "="_ Aexp:arrayExp { return createNode("Array_declaration", [ id, Aexp]); }
+arrayDecl =  id:arrayCons _ "="_ Aexp:arrayExp { return createNode("array_declaration", [ id, Aexp]); }
 
-arrayCons = type:type _ cor:("[]")+ _ id:id { return createNode("ID", [ type, cor, id ]); }
-arrayExp = "new" _ type:type _ ("["_ intg:entero _"]")+ {return createNode("new", [type, intg]);}
+arrayCons = type:type _ cor:"[]" _ id:id { return createNode("init", [ type, cor, id ]); }
+arrayExp = "new" _ type:type _ "["_ intg:exp _"]" {return createNode("new", [type, intg]);}
 	/ id
 	/ "{" _ list:listcons _ "}"  { return createNode("list", list); }
     
+arrayAssing = _ id:id _ "["_ intg:exp _"]" _ "=" _ exp:exp { return createNode("array_assign", [id, intg, exp]); }
+
 //Void
 void = _ "void" _ id:id _ "("_")" sens:sentencesVoid {return createNode("void", sens.concat(re));}
 
