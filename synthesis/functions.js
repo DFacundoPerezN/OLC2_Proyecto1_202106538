@@ -31,7 +31,6 @@ function executeCall (node) {
         console.log(clavevalor);
     }
     //first child is the id,
-    //the other children are the parameters
     console.log('Call Node: '+JSON.stringify(node.children[0]));
     let id = node.children[0].type;
 
@@ -41,6 +40,7 @@ function executeCall (node) {
         throw new Error('The function does not exist');
     }
     node.type = referenced.type;
+    //the other children are the parameters
     let referencedParameters = [].concat(referenced.parameters); //this are going to be the id's {type, value}
     let insertedParameters = deepClone(node.children.slice(1)); //doing .slice(1) to remove the id from the parameters
     console.log('Inserted Parameters: '+JSON.stringify(insertedParameters, null, 2));

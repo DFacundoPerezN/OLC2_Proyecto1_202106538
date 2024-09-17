@@ -107,6 +107,31 @@ function getValue (node) {
         getValue(node.children[0] )
         node.value = node.children[0].type;
         return node.value;
+    } else if(node.type ==='length'){
+        node.type = 'int';
+        if (node.children[0].type === 'string'){
+            node.value = getValue(node.children[0] ).length;
+            return node.value;
+        } 
+        const arrayName = node.children[0].type;
+        const array = globalPower.IdMap.get(arrayName).value;
+        node.value = array.length;
+        return node.value;
+    }  else if(node.type ==='join'){
+        node.type = 'string';
+        const arrayName = node.children[0].type;
+        const array = globalPower.IdMap.get(arrayName).value;
+        node.value = array.toString();
+        return node.value;
+
+    }   else if(node.type ==='indexOf'){
+        node.type = 'int';
+        const arrayName = node.children[0].type;
+        const index = getValue(node.children[1]);
+        const array = globalPower.IdMap.get(arrayName).value;
+        node.value = array.indexOf(index);
+        return node.value;
+        
     } else if(node.type==='op3'){            
         let condition = getValue(node.children[0] );        
         if (condition == 'true') {

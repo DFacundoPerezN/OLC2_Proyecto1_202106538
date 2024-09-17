@@ -163,6 +163,7 @@ neg = _"-"_ right:neg
 		{ return createNode("-", [right]); } 
 		/ ntF:nativeFunction 	{return ntF;}
         / functionCall
+		/ arrayFunction
         /_ terminal:term _	{return terminal;}
         
 term =  val:id "[" num:exp "]" {return createNode("arrayValue", [val, num]);}
@@ -204,6 +205,10 @@ arrayExp = "new" _ type:type _ "["_ intg:exp _"]" {return createNode("new", [typ
     
 arrayAssing = _ id:id _ "["_ intg:exp _"]" _ "=" _ exp:exp { return createNode("array_assign", [id, intg, exp]); }
 
+arrayFunction = _ id:id ".indexOf("_ exp:exp _ ")" {return createNode("indexOf", [id, exp]);}
+				/_ id:id ".join("_")" {return createNode("join", [id]);}
+				/ _ id:id ".length" {return createNode("length", [id]);}
+
 //Function Call
 functionCall = _ id:id _ "(" _ listcons:listcons _ ")" {return createNode("call", [id].concat(listcons));}
 				/ _ id:id _ "(" _ ")" {return createNode("call", [id]);}
@@ -225,6 +230,20 @@ param = type:type _ id:id {return createNodeVar(type, id.type)}
 sentencesVoid = _"{"_ sens:sentences re:return (sentences)? "}"_{return createNode("sentences", sens.concat(re));}
 				/sentenceBlock 
 
+//Structs
+struct = _ "struct" _ id:id _ "{" _ list:listStruct _ "}" {return createNode("struct", [id, list]);}
+
+listStruct = listelement:structElement liststruct:listStruct {return [listelement].concat(liststruct);}
+			/ structElement
+
+structElement = type:type _ id:id _ ";" {return createNode("structElement", [type, id]);}
+
+structCall = _ id:id _ "." _ id2:id {return createNode("structCall", [id, id2]);}
+			/ _ id:id _ "." structCall:structCall {return createNode("structCall", [id, structCall]);}
+		
+structAssing = _ id:id _ "." _ id2:id _ "=" _ exp:exp {return createNode("structAssing", [id, id2, exp]);}
+			/ _ id:id _ "." structAssing:structAssing {return createNode("structAssing", [id, structAssing]);}
+
 _ "Whitespace" = [ \t\n\r]*
 entero = int:[0-9]+  						{return text()}
 float "Float" = [0-9]+"."([0-9]+)?  			{return text()}
@@ -233,7 +252,8 @@ string "String" = "\"" a:([^"]/escapes)*"\"" 	{return text()}
 char "char" =  "'"[^']"'"_ 					{return text()}
 id "ID" = val:(!reserved [A-Za-z]["_"A-Za-z0-9]*) 		{return createNodeID(location()?.start.line, location()?.start.column, text());}
 
-reserved = type / "if" / "else" /"switch" / "case" /"for"
+reserved = type / "if" / "else" /"switch" / "case" /"for" / "while" / "break" / "continue" / "return" 
+				/ "void" / "System" / "out" / "println" 
 
 coments"Comments" = _ "/*" (!"*/" .)* "*/"
 			/ _"//" ([^(\n)])* "\n"
