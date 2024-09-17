@@ -315,15 +315,7 @@ function executeFor(node ) {
     }
 }
 
-function executeFunction (node ) {
-    //first child is the id, 
-    //second child is the parameters,
-    //third child is the code block
-    let id = node.children[0].value;
-    let parameters = node.children[1];
-    let codeBlock = node.children[2];
-    //globalPower.IdMap[id] = {parameters, codeBlock};
-}
+
 
 export{
     executePrint,
@@ -333,6 +325,5 @@ export{
     executeSwitch,
     executeWhile,
     executeFor,
-    executeFunction,
     deepClone
 }

@@ -25,7 +25,7 @@ execute.addEventListener("click", () => {
   const code = input.value;
   const tree =  parse(code);
   console.log(tree);
-  interpreter.ast = tree;
+  interpreter.addAst(tree);
 
   interpreter.execute();
   //salida.innerHTML = JSON.stringify(tree, null, 2);

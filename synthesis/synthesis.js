@@ -14,10 +14,13 @@ import {
     executeWhile,
     executeFor } from './sentences.js';
 
+import {executeFunction, executeVoid, executeCall} from './functions.js';
+
 import {executeArrayDec, executeArrayAssign, executeForEach} from './arrays.js';
 
 let globalPower = {
     IdMap: new Map(),
+    FuncMap: new Map(),
     output: ''
 };
 
@@ -76,11 +79,11 @@ function getValue (node) {
         return array[index];
     } else if(node.type ==='parseInt'){
         node.type = 'int';
-        node.value = getValue(node.children[0] );
+        node.value = getValue(node.children[0]).replace(/"/g, '');
         return node.value;
     } else if(node.type ==='parseFloat'){
         node.type = 'float';
-        node.value = getValue(node.children[0] );
+        node.value = getValue(node.children[0]).replace(/"/g, '');
         return node.value;
     } else if(node.type ==='toString'){
         node.type = 'string';
@@ -111,7 +114,11 @@ function getValue (node) {
         } else {
             return getValue(node.children[2] );
         }
-    } else if (/^[A-Za-z]+/.test(node.type)) {
+    } else if (node.type === 'call') {
+           
+        return executeCall(node);
+    }
+    else if (/^[A-Za-z]+/.test(node.type)) {
         if (globalPower.IdMap.has(node.type)) {
             //node.value = node.type;
             const val = globalPower.IdMap.get(node.type).value;
@@ -366,12 +373,20 @@ function executeSentence (node) {
         executeArrayDec(node);
     } else if(node.type === 'array_assign'){
         executeArrayAssign(node);
-    }    
+    } else if(node.value === 'function'){
+        executeFunction(node);
+    } else if(node.type === 'void'){
+        executeVoid(node);
+    } else if(node.type === 'call'){
+        executeCall(node);
+    }
     else if(node.type === 'break'){
         return 'break';
     } else if(node.type === 'continue'){
         return 'continue';
-    }    
+    } else if(node.type === 'return'){
+        return 'return';
+    }
 }
 
 

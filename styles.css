@@ -58,6 +58,8 @@ body {
     text-align: right;
     color: #858585;
     user-select: none;
+    overflow: hidden;
+    line-height: 1.25em; /* Ajusta el line-height a la altura del código */
 }
 
 .code {
@@ -66,11 +68,12 @@ body {
     border: none;
     resize: none;
     font-family: monospace;
-    overflow: auto;
-    line-height: 1.5;
-    white-space: nowrap;
+    line-height: 1.5em; /* Mantén el mismo line-height que en .line-numbers */
     background-color: #1e1e1e;
     color: #d4d4d4;
+    overflow: auto;
+    white-space: nowrap;
+    /*height: 100%;*/
 }
 
 .text-area {

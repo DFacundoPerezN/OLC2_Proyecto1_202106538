@@ -58,6 +58,7 @@ sentence =  instruc
             / sentenceFor 
 			/sentenceT
 			/ print
+            / void
             /coments {return []}
  
 //Transfer sentences
@@ -105,7 +106,7 @@ sentenceFor = _"for"_"("_ type:type _ element:id _":"_ array:id ")"_ sens:senten
             {return createNode("for", [dec, cond, inc, sens]);}
 
 // Instruccions
-instruc = i:(arrayDecl/ arrayAssing /  inc  / assing/ decl) _ ";" {return i;}
+instruc = i:(arrayDecl/ arrayAssing /  inc  / assing/ decl /functionCall) _ ";" {return i;}
 
 //Incre
 inc "Incremental" = _ id:id _ inc:("+="/"-=")_ exp:exp
@@ -161,6 +162,7 @@ mod = left:neg op:"%" right:mod
 neg = _"-"_ right:neg
 		{ return createNode("-", [right]); } 
 		/ ntF:nativeFunction 	{return ntF;}
+        / functionCall
         /_ terminal:term _	{return terminal;}
         
 term =  val:id "[" num:exp "]" {return createNode("arrayValue", [val, num]);}
@@ -202,8 +204,23 @@ arrayExp = "new" _ type:type _ "["_ intg:exp _"]" {return createNode("new", [typ
     
 arrayAssing = _ id:id _ "["_ intg:exp _"]" _ "=" _ exp:exp { return createNode("array_assign", [id, intg, exp]); }
 
+//Function Call
+functionCall = _ id:id _ "(" _ listcons:listcons _ ")" {return createNode("call", [id].concat(listcons));}
+				/ _ id:id _ "(" _ ")" {return createNode("call", [id]);}
+
 //Void
-void = _ "void" _ id:id _ "("_")" sens:sentencesVoid {return createNode("void", sens.concat(re));}
+void = _ "void" _ id:id _ params:parameters sens:sentencesVoid 
+			{return createNode("void", [id,params,sens]);}
+      /_ type:(type) _ id:id _ params:parameters sens:sentencesVoid 
+      		{const node = createNode(type, [id,params,sens]); node.value = "function"; return node;}
+
+//Parameters
+parameters = "(" _ listparam:listparam _ ")" {return createNode("parameters", listparam);}
+			/ "(" _ ")"  {return createNode("parameters", []);}
+
+listparam = p:param _ "," _ listp:listparam {return [p].concat(listp);}
+			/param
+param = type:type _ id:id {return createNodeVar(type, id.type)} 
 
 sentencesVoid = _"{"_ sens:sentences re:return (sentences)? "}"_{return createNode("sentences", sens.concat(re));}
 				/sentenceBlock 
