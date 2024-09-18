@@ -1,6 +1,6 @@
 import { executeSentence } from './synthesis.js';
 import { getValue } from './synthesis.js' ;
-import {globalPower} from './synthesis.js' ;
+import {globalPower, addSymbol} from './synthesis.js' ;
 import {deepClone} from './sentences.js' ;
 
 function executeFunction (node) {
@@ -13,6 +13,7 @@ function executeFunction (node) {
     let parameters = node.children[1].children;
     let codeBlock = deepClone(node.children[2]);
     globalPower.FuncMap.set(id, {parameters, codeBlock, type});
+    addSymbol(id, 'function', type, node.children[0].line, node.children[0].column);
 }
 
 function executeVoid (node) {
@@ -24,6 +25,7 @@ function executeVoid (node) {
     let parameters = node.children[1].children;
     let codeBlock = node.children[2];
     globalPower.FuncMap.set(id, {parameters, codeBlock, type});
+    addSymbol(id, type, 'void', node.children[0].line, node.children[0].column);
 }
 
 function executeCall (node) {

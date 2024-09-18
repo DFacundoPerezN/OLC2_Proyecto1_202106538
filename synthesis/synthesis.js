@@ -24,8 +24,17 @@ let globalPower = {
     IdMap: new Map(),
     FuncMap: new Map(),
     Prototypes : new Map(),
-    output: ''
+    output: '',
+    symbolTable: []
 };
+
+function addSymbol(id, type_symbol, type_var, line, column){
+    try{
+    globalPower.symbolTable.push(new Symbol_s(id, type_symbol, type_var, line, column));
+    } catch (e) {
+        console.log('Error adding symbol to symbolTable: '+e);
+    }
+  }
 
 class Synthesis {
   constructor() {
@@ -38,16 +47,12 @@ class Synthesis {
     executeSentences(this.ast);
   }
 
-  addSymbol(id, type_symbol, type_var, line, column) {
-    this.symbolTable.push(new Symbol_s(id, type_symbol, type_var, line, column));
-  }
-
   addAst(ast) {
     this.ast = ast;
   }
 
   getSymbolTable() {
-    return this.symbolTable;
+    return globalPower.symbolTable;
   }
 
   getOutput() {
@@ -154,12 +159,25 @@ function getValue (node) {
         console.log('Key: '+key);
         //we can know what type of value is by the key in the 'Prototypes' map
         //or in the 'IdMap' map with the 'type' atribute by th key
-        console.log('Prototypes: '+globalPower.Prototypes.get(key));
+        //console.log('Prototypes: '+globalPower.Prototypes.get(key));
         let type = globalPower.IdMap.get(key).type
-        console.log('IdMap: '+type);
         node.type = type;
+        console.log('IdMap saved type: '+node.type);
         //Finally we get the value of the key in the 'IdMap' map
         return globalPower.IdMap.get(key).value;
+    } else if (node.type === 'Object.keys') {
+        node.type = 'string';
+        let objectName = node.children[0].type;
+        let keys = '[';
+        for (let key of globalPower.IdMap.keys()) {
+            if (key.includes(objectName)) {
+                keys += key.replace(objectName+'.', '') + ', ';
+            }
+        }
+        if (keys.includes(',')) {
+            keys = keys.slice(0, keys.length - 2) + ']';
+        }
+        return keys;
     }
     else if (/^[A-Za-z]+/.test(node.type)) {
         if (globalPower.IdMap.has(node.type)) {
@@ -428,8 +446,7 @@ function executeSentence (node) {
         executeStructDec(node);
     } else if(node.type === 'structAssign'){
         executeStructAssing(node);  
-    }
-    else if(node.type === 'break'){
+    } else if(node.type === 'break'){
         return 'break';
     } else if(node.type === 'continue'){
         return 'continue';
@@ -441,6 +458,7 @@ function executeSentence (node) {
 
 export { 
     globalPower,
+    addSymbol,
     Synthesis, 
     getValue, 
     executeSentences, 

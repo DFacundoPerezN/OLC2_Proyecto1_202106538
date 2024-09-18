@@ -1,6 +1,6 @@
 import { executeSentence } from './synthesis.js';
 import { getValue } from './synthesis.js' ;
-import {globalPower} from './synthesis.js' ;
+import {globalPower, addSymbol} from './synthesis.js' ;
 import {deepClone} from './sentences.js' ;
 
 const defaultValuesMap = new Map([
@@ -23,7 +23,7 @@ function executeArrayDec(node){
     const init = node.children[0]; //init is the first child of the array declaration (I declare it for making it easier to read)
     const type = 'Array of '+init.children[0];
     const name = init.children[2].type;
-
+    addSymbol(name, type, 'variable', init.children[2].line, init.children[2].column);
     const array = [];
 
     const valueInfo = node.children[1]; 

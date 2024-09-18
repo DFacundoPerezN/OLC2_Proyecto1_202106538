@@ -2,7 +2,7 @@
 //const {synthesis} = require('./synthesis.js');
 import { getValue } from './synthesis.js' ;
 import { executeSentence } from './synthesis.js' ;
-import {globalPower} from './synthesis.js' ;
+import {globalPower, addSymbol} from './synthesis.js' ;
 
 
 function executePrint(node) {
@@ -28,22 +28,24 @@ function executeDeclaration(node ) {
         console.error("globalPower.IdMap must be a Map, instead got: " + typeof globalPower.IdMap);
         return;
     }
+    let id = node.children[1].type;
+    let type = node.children[0];
     if (node.children[0] === "var") { //case: "var" <id> "=" <value> ";"
         console.log('Declaration: '+node.children[0]);
-        let id = node.children[1].type;
+        //let id = node.children[1].type;
         let value = getValue(node.children[2] );
-        let type = node.children[2].type;
+        type = node.children[2].type;
         globalPower.IdMap.set(id, { type, value }); //add the variable to the map; the id is the key to an object with the type and the value
         
     } else if (node.children.length === 2) {    //case: <type> <value> ";"
-        let type = node.children[0];
-        let id = node.children[1].type;
+        //let type = node.children[0];
+        //let id = node.children[1].type;
         let value = "null";
         globalPower.IdMap.set(id, { type, value }); 
         //add the variable to the map; the id is the key to an object with the type and the value
     } else {                            //case: <type> <id> "=" <value> ";"
-        let type = node.children[0];
-        let id = node.children[1].type;
+        //let type = node.children[0];
+        //let id = node.children[1].type;
         let type2 = node.children[2].type;
         let value = getValue(node.children[2] );
         if (type !== type2 && !(type === 'float' && type2 === 'int')) { // Verify if the types are the same or if the type is float and the type1 is int
@@ -52,6 +54,7 @@ function executeDeclaration(node ) {
         globalPower.IdMap.set(id, { type, value }); 
         //add the variable to the map; the id is the key to an object with the type and the value
     }
+    addSymbol(id, type, 'variable', node.children[1].line, node.children[1].column);
     console.log(globalPower.IdMap);
     return globalPower.IdMap;
 }

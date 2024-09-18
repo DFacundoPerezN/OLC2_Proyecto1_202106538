@@ -9,6 +9,7 @@
 <body>
     <div class="sidebar">
         <button id="open-file">Abrir archivo</button>
+        <input type="file" id="fileInput" style="display: none;">
         <button id="execute">Ejecutar</button>
         <button id="reports">Reportes</button>
     </div>
@@ -27,7 +28,27 @@
     </div>
 
     <script>
+        const openFileButton = document.getElementById('open-file');
+        const fileInput = document.getElementById('fileInput');
         const codeArea = document.getElementById('code');
+    
+        // Cuando se presiona el botón "Abrir archivo"
+        openFileButton.addEventListener('click', () => {
+            fileInput.click();  // Simula un clic en el input de archivos
+        });
+    
+        // Leer el archivo cuando se selecciona
+        fileInput.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    codeArea.value = e.target.result;  // Escribe el contenido del archivo en el área de código
+                    updateLineNumbers();  // Actualiza los números de línea
+                };
+                reader.readAsText(file);  // Lee el archivo como texto
+            }
+        });
         const lineNumbers = document.getElementById('line-numbers');
 
         codeArea.addEventListener('input', updateLineNumbers);

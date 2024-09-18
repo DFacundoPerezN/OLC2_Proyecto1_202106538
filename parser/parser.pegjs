@@ -166,6 +166,7 @@ neg = _"-"_ right:neg
         / functionCall
 		/ arrayFunction
         / structAccess
+		/ _ "Object.keys(" _ id:id _ ")" {return createNode("Object.keys", [id]);}
         /_ terminal:term _	{return terminal;}
         
 term =  val:id "[" num:exp "]" {return createNode("arrayValue", [val, num]);}
@@ -270,7 +271,7 @@ char "char" =  "'"[^']"'"_ 					{return text()}
 id "ID" = val:(!reserved [A-Za-z]["_"A-Za-z0-9]*) 		{return createNodeID(location()?.start.line, location()?.start.column, text());}
 
 reserved = type / "if" / "else" /"switch" / "case" /"for" / "while" / "break" / "continue" / "return" 
-				/ "void" / "System" / "out" / "println" 
+				/ "void" / "System" / "out" / "println" /"Object" / "keys" / "struct" 
 
 coments"Comments" = _ "/*" (!"*/" .)* "*/"
 			/ _"//" ([^(\n)])* ("\n"/"\r")
