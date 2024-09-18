@@ -59,6 +59,7 @@ sentence =  instruc
 			/sentenceT
 			/ print
             / void
+            / struct
             /coments {return []}
  
 //Transfer sentences
@@ -106,22 +107,22 @@ sentenceFor = _"for"_"("_ type:type _ element:id _":"_ array:id ")"_ sens:senten
             {return createNode("for", [dec, cond, inc, sens]);}
 
 // Instruccions
-instruc = i:(arrayDecl/ arrayAssing /  inc  / assing/ decl /functionCall) _ ";" {return i;}
+instruc = _ i:(structDecl/ structAssing/ arrayDecl/ arrayAssing / inc / assing/ decl /functionCall) _ ";" {return i;}
 
 //Incre
-inc "Incremental" = _ id:id _ inc:("+="/"-=")_ exp:exp
+inc "Incremental" = id:id _ inc:("+="/"-=")_ exp:exp
 						{return createNode(inc , [id, exp]);} // id.getValue() + exp.getValue()
-            		/ _ id:id _ inc:("++"/"--") 	
+            		/ id:id _ inc:("++"/"--") 	
             			{return createNode(inc, id);}
     
 //Declaration 
 decl = type:type id:id _ "=" exp:exp 	{ return createNode("declaration", [type, id, exp]); }
     /type:type id:id 					{ return createNode("declaration", [type, id]); }
-	/ _ "var" _ id:id _ "=" exp:exp 	{ return createNode("declaration", ["var", id, exp]); }
+	/ "var" _ id:id _ "=" exp:exp 	{ return createNode("declaration", ["var", id, exp]); }
     /inc
     
 // Assignment
-assing = _ id:id _ "=" exp:exp { return createNode("assign", [id, exp]); }
+assing = id:id _ "=" exp:exp { return createNode("assign", [id, exp]); }
 
 // valor
 exp = op3/ logical 
@@ -164,6 +165,7 @@ neg = _"-"_ right:neg
 		/ ntF:nativeFunction 	{return ntF;}
         / functionCall
 		/ arrayFunction
+        / structAccess
         /_ terminal:term _	{return terminal;}
         
 term =  val:id "[" num:exp "]" {return createNode("arrayValue", [val, num]);}
@@ -196,22 +198,22 @@ listcons = listelement:exp "," listcons:listcons {return [listelement].concat(li
 	/ listelement:exp 								{return [listelement]}
  
 //Arrays
-arrayDecl =  id:arrayCons _ "="_ Aexp:arrayExp { return createNode("array_declaration", [ id, Aexp]); }
+arrayDecl = id:arrayCons _ "="_ Aexp:arrayExp { return createNode("array_declaration", [ id, Aexp]); }
 
 arrayCons = type:type _ cor:"[]" _ id:id { return createNode("init", [ type, cor, id ]); }
 arrayExp = "new" _ type:type _ "["_ intg:exp _"]" {return createNode("new", [type, intg]);}
 	/ id
 	/ "{" _ list:listcons _ "}"  { return createNode("list", list); }
     
-arrayAssing = _ id:id _ "["_ intg:exp _"]" _ "=" _ exp:exp { return createNode("array_assign", [id, intg, exp]); }
+arrayAssing = id:id _ "["_ intg:exp _"]" _ "=" _ exp:exp { return createNode("array_assign", [id, intg, exp]); }
 
 arrayFunction = _ id:id ".indexOf("_ exp:exp _ ")" {return createNode("indexOf", [id, exp]);}
 				/_ id:id ".join("_")" {return createNode("join", [id]);}
 				/ _ id:id ".length" {return createNode("length", [id]);}
 
 //Function Call
-functionCall = _ id:id _ "(" _ listcons:listcons _ ")" {return createNode("call", [id].concat(listcons));}
-				/ _ id:id _ "(" _ ")" {return createNode("call", [id]);}
+functionCall = id:id _ "(" _ listcons:listcons _ ")" {return createNode("call", [id].concat(listcons));}
+				/ id:id _ "(" _ ")" {return createNode("call", [id]);}
 
 //Void
 void = _ "void" _ id:id _ params:parameters sens:sentencesVoid 
@@ -227,22 +229,37 @@ listparam = p:param _ "," _ listp:listparam {return [p].concat(listp);}
 			/param
 param = type:type _ id:id {return createNodeVar(type, id.type)} 
 
-sentencesVoid = _"{"_ sens:sentences re:return (sentences)? "}"_{return createNode("sentences", sens.concat(re));}
+sentencesVoid = _"{"_ sens:sentences re:return (sentences)? "}"_ {return createNode("sentences", sens.concat(re));}
 				/sentenceBlock 
 
 //Structs
-struct = _ "struct" _ id:id _ "{" _ list:listStruct _ "}" {return createNode("struct", [id, list]);}
+struct = _ "struct" _ id:id _ "{" _ list:listStruct _ "}" _ ";"
+	  		{let node = id; node.value = node.type; node.type = "struct" ;node.children = list;
+            return node;}
 
 listStruct = listelement:structElement liststruct:listStruct {return [listelement].concat(liststruct);}
 			/ structElement
 
-structElement = type:type _ id:id _ ";" {return createNode("structElement", [type, id]);}
+structElement = type:type _ id:id _ ";" {return {type:type, id:id.type};}
 
-structCall = _ id:id _ "." _ id2:id {return createNode("structCall", [id, id2]);}
-			/ _ id:id _ "." structCall:structCall {return createNode("structCall", [id, structCall]);}
-		
-structAssing = _ id:id _ "." _ id2:id _ "=" _ exp:exp {return createNode("structAssing", [id, id2, exp]);}
-			/ _ id:id _ "." structAssing:structAssing {return createNode("structAssing", [id, structAssing]);}
+//Access to atribute of a struct
+structAccess "Struct Access" = _ id:id _ "." structAccess:structAccess 
+				{return createNode("structAccess", [id.type].concat(structAccess));}
+			/ _ id:id _ "." _ id2:id {return createNode("structAccess", [id.type, id2.type]);}
+
+//Change value of an atribute
+structAssing = access:structAccess _ "=" _ exp:exp 
+				{return createNode("structAssing", [access , exp]);}
+
+//Struct Declaration
+structDecl = id _ id:id _ "=" structCons:structCons {return createNode("structDeclaration", [id, structCons])}
+			/ "var" _ id:id _ "=" structCons:structCons {return createNode("structDeclaration", [id, structCons])}
+            
+structCons =  _ structId:id _ "{" list:listDecl "}" 
+			{let node = createNodeVar("structVar", structId.type); node.children = list; return node;}
+
+listDecl = _ id:id _ ":" _ exp:exp _ "," list:listDecl {return [createNode(id.type, [exp])].concat(list)}
+		/ _ id:id _ ":" _ exp:exp _  {return createNode(id.type, [exp]);}
 
 _ "Whitespace" = [ \t\n\r]*
 entero = int:[0-9]+  						{return text()}
@@ -256,7 +273,7 @@ reserved = type / "if" / "else" /"switch" / "case" /"for" / "while" / "break" / 
 				/ "void" / "System" / "out" / "println" 
 
 coments"Comments" = _ "/*" (!"*/" .)* "*/"
-			/ _"//" ([^(\n)])* "\n"
+			/ _"//" ([^(\n)])* ("\n"/"\r")
 
 escapes =_ "\\" ("n" / "t" / '"' / "\\") _ ;
 

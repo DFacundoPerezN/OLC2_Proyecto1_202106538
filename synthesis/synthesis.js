@@ -18,9 +18,12 @@ import {executeFunction, executeVoid, executeCall} from './functions.js';
 
 import {executeArrayDec, executeArrayAssign, executeForEach} from './arrays.js';
 
+import {executeStructPrototype, executeStructDec, executeStructAssing } from './structs.js';
+
 let globalPower = {
     IdMap: new Map(),
     FuncMap: new Map(),
+    Prototypes : new Map(),
     output: ''
 };
 
@@ -140,8 +143,23 @@ function getValue (node) {
             return getValue(node.children[2] );
         }
     } else if (node.type === 'call') {
-           
+        //console.log('Calling function: '+node.children[0].type);
         return executeCall(node);
+    } else if (node.type === 'structAccess') {
+        //the children are de id's that we concat to get de key
+        let key=node.children[0];
+        for (let i = 1; i < node.children.length; i++) {
+            key += '.'+node.children[i];
+        }
+        console.log('Key: '+key);
+        //we can know what type of value is by the key in the 'Prototypes' map
+        //or in the 'IdMap' map with the 'type' atribute by th key
+        console.log('Prototypes: '+globalPower.Prototypes.get(key));
+        let type = globalPower.IdMap.get(key).type
+        console.log('IdMap: '+type);
+        node.type = type;
+        //Finally we get the value of the key in the 'IdMap' map
+        return globalPower.IdMap.get(key).value;
     }
     else if (/^[A-Za-z]+/.test(node.type)) {
         if (globalPower.IdMap.has(node.type)) {
@@ -403,7 +421,13 @@ function executeSentence (node) {
     } else if(node.type === 'void'){
         executeVoid(node);
     } else if(node.type === 'call'){
-        executeCall(node);
+        executeCall(node); 
+    } else if(node.type === 'struct'){
+        executeStructPrototype(node);
+    } else if(node.type === 'structDeclaration'){
+        executeStructDec(node);
+    } else if(node.type === 'structAssign'){
+        executeStructAssing(node);  
     }
     else if(node.type === 'break'){
         return 'break';
